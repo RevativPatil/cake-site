@@ -14,7 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cake_order_requests: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_note: string
+          customer_phone: string
+          delivery_address: string
+          estimated_total_inr: number
+          id: string
+          items: Json
+          request_reference: string
+          requested_date: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_note?: string
+          customer_phone: string
+          delivery_address: string
+          estimated_total_inr: number
+          id?: string
+          items: Json
+          request_reference: string
+          requested_date?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_note?: string
+          customer_phone?: string
+          delivery_address?: string
+          estimated_total_inr?: number
+          id?: string
+          items?: Json
+          request_reference?: string
+          requested_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      custom_cake_enquiries: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          design_notes: string
+          dietary_preference: string
+          flavour: string
+          id: string
+          occasion: string
+          request_reference: string
+          requested_date: string | null
+          size: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          design_notes?: string
+          dietary_preference: string
+          flavour: string
+          id?: string
+          occasion: string
+          request_reference: string
+          requested_date?: string | null
+          size: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          design_notes?: string
+          dietary_preference?: string
+          flavour?: string
+          id?: string
+          occasion?: string
+          request_reference?: string
+          requested_date?: string | null
+          size?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
