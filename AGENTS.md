@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture decisions
+
+- Keep the cake sample catalogue and shared validation in `src/lib/cake-store.ts`, and submit public order requests through a validated `createServerFn` in `src/lib/cake-orders.functions.ts`; this keeps browser and server estimates aligned and rejects forged catalogue values before public database inserts.
