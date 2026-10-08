@@ -1,18 +1,15 @@
-# Pixel Perfect Replica
+# The Cake Vault — Storefront & Order Request System
 
-Implement exactly the screenshot and nothing else
+A modern, high-performance cake storefront for The Cake Vault with 5 verified store locations across Pune & Pimpri-Chinchwad, sample catalog estimation, custom cake designer, and order request tracking.
 
-This project was built with [Lovable](https://lovable.dev).
+## Development
 
-**Live app**: https://pixel-perfect-render-84259.lovable.app
+You need Node.js and npm:
 
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/e727a127-cd61-48b0-b79d-004ec14fca75).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+```sh
+npm i
+npm run dev
+```
 
 ## Development
 

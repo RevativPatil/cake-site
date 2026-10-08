@@ -10,8 +10,8 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -36,11 +36,8 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  console.error(error);
+  console.error("Root boundary error:", error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -78,25 +75,56 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "The Cake Vault" },
-      { name: "description", content: "Beautiful cakes for birthdays, surprises, and the moments worth sharing." },
+      { title: "The Cake Vault | Best Cake Shop & Bakery in Pune | Custom & Eggless Cakes" },
+      {
+        name: "description",
+        content:
+          "Top-rated bakery & cake shop in Pune with 5 verified locations (Lohegaon Rd / Dhanori, Old Mundhwa Rd, Pimpri-Chinchwad, Ganesh Park, Santosh Mangal Karyalay). Order fresh 100% eggless cakes, custom birthday cakes, rasmalai cakes & same-day delivery. Rated 4.9⭐ by 332+ happy customers.",
+      },
+      {
+        name: "keywords",
+        content:
+          "cake shop in pune, bakery in pune, best cake shop lohegaon, cake delivery mundhwa, cake vault pimpri chinchwad, custom birthday cakes pune, eggless cakes pune, rasmalai cake pune, red velvet cake, same day cake delivery pune, cake shop near me, designer cakes pune",
+      },
       { name: "author", content: "The Cake Vault" },
-      { property: "og:title", content: "The Cake Vault" },
-      { property: "og:description", content: "Beautiful cakes for birthdays, surprises, and the moments worth sharing." },
+      {
+        name: "robots",
+        content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+      },
+      { name: "googlebot", content: "index, follow" },
+      { name: "geo.region", content: "IN-MH" },
+      { name: "geo.placename", content: "Pune, Maharashtra, India" },
+      { name: "geo.position", content: "18.5204303;73.8567437" },
+      { name: "ICBM", content: "18.5204303, 73.8567437" },
+      { property: "og:site_name", content: "The Cake Vault" },
+      { property: "og:locale", content: "en_IN" },
+      {
+        property: "og:title",
+        content: "The Cake Vault | Best Cake Shop & Bakery in Pune | Custom & Eggless Cakes",
+      },
+      {
+        property: "og:description",
+        content:
+          "Top-rated bakery with 5 verified locations across Pune & Pimpri-Chinchwad. Fresh eggless cakes, rasmalai cakes, custom birthday designs & same-day delivery.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://thecakevault.in" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "The Cake Vault | Best Cake Shop & Bakery in Pune" },
+      {
+        name: "twitter:description",
+        content:
+          "Fresh eggless cakes, rasmalai cakes & custom designer birthday cakes. 5 verified store locations across Pune.",
+      },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "canonical", href: "https://thecakevault.in" },
+      { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -128,6 +156,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster position="bottom-right" />
     </QueryClientProvider>
   );
 }

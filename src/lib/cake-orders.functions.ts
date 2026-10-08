@@ -2,11 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 
 import type { Database, Json } from "@/integrations/supabase/types";
-import {
-  cakeOrderRequestSchema,
-  estimateCartTotal,
-  getCake,
-} from "@/lib/cake-store";
+import { cakeOrderRequestSchema, estimateCartTotal, getCake } from "@/lib/cake-store";
 
 export const submitCakeOrderRequest = createServerFn({ method: "POST" })
   .inputValidator((input) => cakeOrderRequestSchema.parse(input))
@@ -31,14 +27,16 @@ export const submitCakeOrderRequest = createServerFn({ method: "POST" })
         product: cake?.name ?? "",
         weight: item.weight,
         quantity: item.quantity,
-        estimated_line_total_inr: Math.round(
-          (cake?.estimateFor500g ?? 0) * (item.weight === "1 kg" ? 1.75 : 1),
-        ) * item.quantity,
+        estimated_line_total_inr:
+          Math.round((cake?.estimateFor500g ?? 0) * (item.weight === "1 kg" ? 1.75 : 1)) *
+          item.quantity,
       };
     });
 
     if (data.items.some((item) => !getCake(item.productId))) {
-      throw new Error("One of the cakes in your bag is no longer available. Please review it and try again.");
+      throw new Error(
+        "One of the cakes in your bag is no longer available. Please review it and try again.",
+      );
     }
 
     const requestReference = `TCV-${globalThis.crypto.randomUUID().toUpperCase()}`;
@@ -56,7 +54,9 @@ export const submitCakeOrderRequest = createServerFn({ method: "POST" })
     });
 
     if (error) {
-      throw new Error("We couldn't send your request just now. Please try again; your bag is still here.");
+      throw new Error(
+        "We couldn't send your request just now. Please try again; your bag is still here.",
+      );
     }
 
     return {
@@ -69,9 +69,10 @@ export const submitCakeOrderRequest = createServerFn({ method: "POST" })
         name: getCake(item.productId)?.name ?? "Cake",
         weight: item.weight,
         quantity: item.quantity,
-        estimatedLineTotal: Math.round(
-          (getCake(item.productId)?.estimateFor500g ?? 0) * (item.weight === "1 kg" ? 1.75 : 1),
-        ) * item.quantity,
+        estimatedLineTotal:
+          Math.round(
+            (getCake(item.productId)?.estimateFor500g ?? 0) * (item.weight === "1 kg" ? 1.75 : 1),
+          ) * item.quantity,
       })),
       estimatedTotal: estimateCartTotal(data.items),
     };

@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  cakeCatalog,
-  cakeOrderRequestSchema,
-  estimateCartTotal,
-} from "@/lib/cake-store";
+import { cakeCatalog, cakeOrderRequestSchema, estimateCartTotal } from "@/lib/cake-store";
 
 describe("cake checkout safeguards", () => {
   it("keeps the displayed sample estimate consistent for selected size and quantity", () => {
     const cake = cakeCatalog.find((item) => item.id === "chocolate-berry");
 
     expect(cake?.estimateFor500g).toBe(780);
-    expect(estimateCartTotal([{ productId: "chocolate-berry", weight: "500 g", quantity: 2 }])).toBe(1560);
-    expect(estimateCartTotal([{ productId: "chocolate-berry", weight: "1 kg", quantity: 1 }])).toBe(1365);
+    expect(
+      estimateCartTotal([{ productId: "chocolate-berry", weight: "500 g", quantity: 2 }]),
+    ).toBe(1560);
+    expect(estimateCartTotal([{ productId: "chocolate-berry", weight: "1 kg", quantity: 1 }])).toBe(
+      1365,
+    );
   });
 
   it("rejects an order request without a valid way to contact the customer", () => {
