@@ -1,4 +1,1102 @@
-//#region node_modules/@tanstack/query-core/build/modern/timeoutManager.js
+import { r as redirect } from "./redirect-jkG3vMHM.mjs";
+import { r as __toESM } from "./rolldown-runtime-CMFfr-1z.mjs";
+import { n as require_react, t as require_jsx_runtime } from "./react-dom-BO7wXRLj.mjs";
+import { B as trimPathRight, D as isDangerousProtocol, E as invariant, I as resolveManifestCssLink, L as rootRouteId, M as reactUse, N as removeTrailingSlash, O as isModuleNotFoundError, S as getScriptPreloadAttrs, U as useRouter, V as useHydrated, _ as dummyMatchContext, a as _getAssetMatches, b as functionalUpdate$1, c as cleanPath, d as createNonReactiveMutableStore, f as createNonReactiveReadonlyStore, g as deepEqual, i as RouterCore, j as matchContext, r as Outlet, s as appendUniqueUserTags, v as escapeHtml, w as getUrlScheme, x as getAssetCrossOrigin, z as trimPathLeft } from "./Match-DkEhPuOS.mjs";
+import { t as Toaster$1 } from "./dist-B01q09rc.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/router-BTFfev8g.js
+function getSsrBodyScriptParts(matches, manifest, nonce, routeScriptAttrs) {
+	const assetMatches = _getAssetMatches(matches);
+	const routeScripts = [];
+	const manifestScripts = [];
+	for (const match of assetMatches) for (const script of Array.isArray(match.scripts) ? match.scripts : []) {
+		if (!script) continue;
+		const { children, ...attrs } = script;
+		routeScripts.push({
+			tag: "script",
+			attrs: {
+				...attrs,
+				...routeScriptAttrs,
+				nonce
+			},
+			children
+		});
+	}
+	if (manifest) for (const match of assetMatches) for (const asset of manifest.routes[match.routeId]?.scripts ?? []) manifestScripts.push({
+		tag: "script",
+		attrs: {
+			...asset.attrs,
+			nonce
+		},
+		children: asset.children
+	});
+	return [routeScripts, manifestScripts];
+}
+function composeSsrBodyScripts([routeScripts, manifestScripts], initialHydrationScripts) {
+	if (!initialHydrationScripts) return [...routeScripts, ...manifestScripts];
+	return [
+		...initialHydrationScripts.before,
+		...routeScripts,
+		...manifestScripts,
+		initialHydrationScripts.boundary
+	];
+}
+var BaseRoute = class {
+	get to() {
+		return this._to;
+	}
+	get id() {
+		return this._id;
+	}
+	get path() {
+		return this._path;
+	}
+	get fullPath() {
+		return this._fullPath;
+	}
+	constructor(options) {
+		this.init = (originalIndex) => {
+			this.originalIndex = originalIndex;
+			this._branch = void 0;
+			const options = this.options;
+			const isRoot = !options?.path && !options?.id;
+			this.parentRoute = this.options.getParentRoute?.();
+			if (isRoot) this._path = rootRouteId;
+			else if (!this.parentRoute) invariant();
+			let path = isRoot ? rootRouteId : options?.path;
+			if (path && path !== "/") path = trimPathLeft(path);
+			const customId = options?.id || path;
+			const id = isRoot ? rootRouteId : cleanPath((this.parentRoute.id === "__root__" ? "" : this.parentRoute.id) + "/" + (customId ?? ""));
+			if (path === "__root__") path = "/";
+			const fullPath = id === "__root__" ? "/" : path === void 0 ? this.parentRoute.fullPath : cleanPath(this.parentRoute.fullPath + "/" + path);
+			this._path = path;
+			this._id = id;
+			this._fullPath = fullPath;
+			this._to = trimPathRight(fullPath);
+		};
+		this.addChildren = (children) => {
+			return this._addFileChildren(children);
+		};
+		this._addFileChildren = (children) => {
+			if (Array.isArray(children)) this.children = children;
+			if (typeof children === "object" && children !== null) this.children = Object.values(children);
+			return this;
+		};
+		this._addFileTypes = () => {
+			return this;
+		};
+		this.updateLoader = (options) => {
+			Object.assign(this.options, options);
+			return this;
+		};
+		this.update = (options) => {
+			Object.assign(this.options, options);
+			return this;
+		};
+		this.lazy = (lazyFn) => {
+			this.lazyFn = lazyFn;
+			return this;
+		};
+		this.redirect = (opts) => redirect({
+			from: this.fullPath,
+			...opts
+		});
+		this.options = options || {};
+		this.isRoot = !options?.getParentRoute;
+		if (options?.id && options?.path) throw new Error(`Route cannot have both an 'id' and a 'path' option.`);
+	}
+};
+var BaseRootRoute = class extends BaseRoute {
+	constructor(options) {
+		super(options);
+	}
+};
+/* @__NO_SIDE_EFFECTS__ */
+function createReactiveSystem({ update, notify, unwatched }) {
+	return {
+		link,
+		unlink,
+		propagate,
+		checkDirty,
+		shallowPropagate
+	};
+	function link(dep, sub, version) {
+		const prevDep = sub.depsTail;
+		if (prevDep !== void 0 && prevDep.dep === dep) return;
+		const nextDep = prevDep !== void 0 ? prevDep.nextDep : sub.deps;
+		if (nextDep !== void 0 && nextDep.dep === dep) {
+			nextDep.version = version;
+			sub.depsTail = nextDep;
+			return;
+		}
+		const prevSub = dep.subsTail;
+		if (prevSub !== void 0 && prevSub.version === version && prevSub.sub === sub) return;
+		const newLink = sub.depsTail = dep.subsTail = {
+			version,
+			dep,
+			sub,
+			prevDep,
+			nextDep,
+			prevSub,
+			nextSub: void 0
+		};
+		if (nextDep !== void 0) nextDep.prevDep = newLink;
+		if (prevDep !== void 0) prevDep.nextDep = newLink;
+		else sub.deps = newLink;
+		if (prevSub !== void 0) prevSub.nextSub = newLink;
+		else dep.subs = newLink;
+	}
+	function unlink(link, sub = link.sub) {
+		const dep = link.dep;
+		const prevDep = link.prevDep;
+		const nextDep = link.nextDep;
+		const nextSub = link.nextSub;
+		const prevSub = link.prevSub;
+		if (nextDep !== void 0) nextDep.prevDep = prevDep;
+		else sub.depsTail = prevDep;
+		if (prevDep !== void 0) prevDep.nextDep = nextDep;
+		else sub.deps = nextDep;
+		if (nextSub !== void 0) nextSub.prevSub = prevSub;
+		else dep.subsTail = prevSub;
+		if (prevSub !== void 0) prevSub.nextSub = nextSub;
+		else if ((dep.subs = nextSub) === void 0) unwatched(dep);
+		return nextDep;
+	}
+	function propagate(link) {
+		let next = link.nextSub;
+		let stack;
+		top: do {
+			const sub = link.sub;
+			let flags = sub.flags;
+			if (!(flags & 60)) sub.flags = flags | 32;
+			else if (!(flags & 12)) flags = 0;
+			else if (!(flags & 4)) sub.flags = flags & -9 | 32;
+			else if (!(flags & 48) && isValidLink(link, sub)) {
+				sub.flags = flags | 40;
+				flags &= 1;
+			} else flags = 0;
+			if (flags & 2) notify(sub);
+			if (flags & 1) {
+				const subSubs = sub.subs;
+				if (subSubs !== void 0) {
+					const nextSub = (link = subSubs).nextSub;
+					if (nextSub !== void 0) {
+						stack = {
+							value: next,
+							prev: stack
+						};
+						next = nextSub;
+					}
+					continue;
+				}
+			}
+			if ((link = next) !== void 0) {
+				next = link.nextSub;
+				continue;
+			}
+			while (stack !== void 0) {
+				link = stack.value;
+				stack = stack.prev;
+				if (link !== void 0) {
+					next = link.nextSub;
+					continue top;
+				}
+			}
+			break;
+		} while (true);
+	}
+	function checkDirty(link, sub) {
+		let stack;
+		let checkDepth = 0;
+		let dirty = false;
+		top: do {
+			const dep = link.dep;
+			const flags = dep.flags;
+			if (sub.flags & 16) dirty = true;
+			else if ((flags & 17) === 17) {
+				if (update(dep)) {
+					const subs = dep.subs;
+					if (subs.nextSub !== void 0) shallowPropagate(subs);
+					dirty = true;
+				}
+			} else if ((flags & 33) === 33) {
+				if (link.nextSub !== void 0 || link.prevSub !== void 0) stack = {
+					value: link,
+					prev: stack
+				};
+				link = dep.deps;
+				sub = dep;
+				++checkDepth;
+				continue;
+			}
+			if (!dirty) {
+				const nextDep = link.nextDep;
+				if (nextDep !== void 0) {
+					link = nextDep;
+					continue;
+				}
+			}
+			while (checkDepth--) {
+				const firstSub = sub.subs;
+				const hasMultipleSubs = firstSub.nextSub !== void 0;
+				if (hasMultipleSubs) {
+					link = stack.value;
+					stack = stack.prev;
+				} else link = firstSub;
+				if (dirty) {
+					if (update(sub)) {
+						if (hasMultipleSubs) shallowPropagate(firstSub);
+						sub = link.sub;
+						continue;
+					}
+					dirty = false;
+				} else sub.flags &= -33;
+				sub = link.sub;
+				const nextDep = link.nextDep;
+				if (nextDep !== void 0) {
+					link = nextDep;
+					continue top;
+				}
+			}
+			return dirty;
+		} while (true);
+	}
+	function shallowPropagate(link) {
+		do {
+			const sub = link.sub;
+			const flags = sub.flags;
+			if ((flags & 48) === 32) {
+				sub.flags = flags | 16;
+				if ((flags & 6) === 2) notify(sub);
+			}
+		} while ((link = link.nextSub) !== void 0);
+	}
+	function isValidLink(checkLink, sub) {
+		let link = sub.depsTail;
+		while (link !== void 0) {
+			if (link === checkLink) return true;
+			link = link.prevDep;
+		}
+		return false;
+	}
+}
+var queuedEffects = [];
+var { link, unlink, propagate, checkDirty, shallowPropagate } = /* @__PURE__ */ createReactiveSystem({
+	update(atom) {
+		return atom._update();
+	},
+	notify(effect) {
+		queuedEffects[queuedEffectsLength++] = effect;
+		effect.flags &= -3;
+	},
+	unwatched(atom) {
+		if (atom.depsTail !== void 0) {
+			atom.depsTail = void 0;
+			atom.flags = 17;
+			purgeDeps(atom);
+		}
+	}
+});
+var queuedEffectsLength = 0;
+function purgeDeps(sub) {
+	const depsTail = sub.depsTail;
+	let dep = depsTail !== void 0 ? depsTail.nextDep : sub.deps;
+	while (dep !== void 0) dep = unlink(dep, sub);
+}
+var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
+/**
+* Read and select the nearest or targeted route match.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useMatchHook
+*/
+function useMatch(opts) {
+	const router = useRouter();
+	const nearestRouteId = import_react.useContext(opts.from ? dummyMatchContext : matchContext);
+	const routeId = opts.from ?? nearestRouteId;
+	const matchStore = router.stores.getMatchStore(routeId);
+	{
+		const match = matchStore.get();
+		if (!match) {
+			if (opts.shouldThrow ?? true) invariant();
+			return;
+		}
+		return opts.select ? opts.select(match) : match;
+	}
+}
+/**
+* Read and select the current route's loader data with type‑safety.
+*
+* Options:
+* - `from`/`strict`: Choose which route's data to read and strictness
+* - `select`: Map the loader data to a derived value
+* - `structuralSharing`: Enable structural sharing for stable references
+*
+* @returns The loader data (or selected value) for the matched route.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useLoaderDataHook
+*/
+function useLoaderData(opts) {
+	return useMatch({
+		from: opts.from,
+		strict: opts.strict,
+		structuralSharing: opts.structuralSharing,
+		select: (match) => {
+			return opts.select ? opts.select(match.loaderData) : match.loaderData;
+		}
+	});
+}
+/**
+* Read and select the current route's loader dependencies object.
+*
+* Options:
+* - `from`: Choose which route's loader deps to read
+* - `select`: Map the deps to a derived value
+* - `structuralSharing`: Enable structural sharing for stable references
+*
+* @returns The loader deps (or selected value) for the matched route.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useLoaderDepsHook
+*/
+function useLoaderDeps(opts) {
+	const { select, ...rest } = opts;
+	return useMatch({
+		...rest,
+		select: (match) => {
+			return select ? select(match.loaderDeps) : match.loaderDeps;
+		}
+	});
+}
+/**
+* Access the current route's path parameters with type-safety.
+*
+* Options:
+* - `from`/`strict`: Specify the matched route and whether to enforce strict typing
+* - `select`: Project the params object to a derived value for memoized renders
+* - `structuralSharing`: Enable structural sharing for stable references
+* - `shouldThrow`: Throw if the route is not found in strict contexts
+*
+* @returns The params object (or selected value) for the matched route.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useParamsHook
+*/
+function useParams(opts) {
+	return useMatch({
+		from: opts.from,
+		shouldThrow: opts.shouldThrow,
+		structuralSharing: opts.structuralSharing,
+		strict: opts.strict,
+		select: (match) => {
+			const params = opts.strict === false ? match.params : match._strictParams;
+			return opts.select ? opts.select(params) : params;
+		}
+	});
+}
+/**
+* Read and select the current route's search parameters with type-safety.
+*
+* Options:
+* - `from`/`strict`: Control which route's search is read and how strictly it's typed
+* - `select`: Map the search object to a derived value for render optimization
+* - `structuralSharing`: Enable structural sharing for stable references
+* - `shouldThrow`: Throw when the route is not found (strict contexts)
+*
+* @returns The search object (or selected value) for the matched route.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useSearchHook
+*/
+function useSearch(opts) {
+	return useMatch({
+		from: opts.from,
+		strict: opts.strict,
+		shouldThrow: opts.shouldThrow,
+		structuralSharing: opts.structuralSharing,
+		select: (match) => {
+			return opts.select ? opts.select(match.search) : match.search;
+		}
+	});
+}
+/**
+* Imperative navigation hook.
+*
+* Returns a stable `navigate(options)` function to change the current location
+* programmatically. Prefer the `Link` component for user-initiated navigation,
+* and use this hook from effects, callbacks, or handlers where imperative
+* navigation is required.
+*
+* Options:
+* - `from`: Optional route base used to resolve relative `to` paths.
+*
+* @returns A function that accepts `NavigateOptions`.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useNavigateHook
+*/
+function useNavigate(_defaultOpts) {
+	const router = useRouter();
+	return import_react.useCallback((options) => {
+		return router.navigate({
+			...options,
+			from: options.from ?? _defaultOpts?.from
+		});
+	}, [_defaultOpts?.from, router]);
+}
+function useRouteContext(opts) {
+	return useMatch({
+		...opts,
+		select: (match) => opts.select ? opts.select(match.context) : match.context
+	});
+}
+var import_jsx_runtime = require_jsx_runtime();
+function resolveExternalLink(to, protocolAllowlist) {
+	const scheme = typeof to === "string" && getUrlScheme(to);
+	if (!scheme) return;
+	if (!protocolAllowlist.has(scheme)) return null;
+	return to;
+}
+function resolveIsActive(location, next, activeOptions, basepath, isHydrated) {
+	const currentPath = removeTrailingSlash(location.pathname, basepath);
+	const nextPath = removeTrailingSlash(next.pathname, basepath);
+	if (activeOptions?.exact ? currentPath !== nextPath : !(currentPath.startsWith(nextPath) && (currentPath.length === nextPath.length || currentPath[nextPath.length] === "/"))) return false;
+	if (activeOptions?.includeSearch ?? true) {
+		if (!deepEqual(location.search, next.search, !activeOptions?.exact, activeOptions?.explicitUndefined)) return false;
+	}
+	if (activeOptions?.includeHash) return isHydrated && location.hash === next.hash;
+	return true;
+}
+function useLinkProps(options, forwardedRef, host) {
+	return getServerLinkProps(useRouter(), options, forwardedRef, host);
+}
+var STATIC_EMPTY_OBJECT = {};
+var STATIC_ACTIVE_OBJECT = { className: "active" };
+var ROUTER_OPTION_KEYS = /* @__PURE__ */ new Set([
+	"to",
+	"params",
+	"search",
+	"hash",
+	"state",
+	"mask",
+	"from",
+	"unsafeRelative",
+	"_fromLocation",
+	"reloadDocument",
+	"preload",
+	"preloadDelay",
+	"preloadIntentProximity",
+	"hashScrollIntoView",
+	"replace",
+	"startTransition",
+	"resetScroll",
+	"viewTransition",
+	"ignoreBlocker",
+	"activeProps",
+	"inactiveProps",
+	"activeOptions",
+	"_asChild"
+]);
+function collectElementProps(options, host) {
+	const props = {};
+	for (const key in options) {
+		if (ROUTER_OPTION_KEYS.has(key) || key === "type" && host !== void 0 || key === "disabled" && host === "a") continue;
+		props[key] = options[key];
+	}
+	return props;
+}
+function applyLinkState(props, options, isActive, href, linkDisabled, host) {
+	const { activeProps, inactiveProps, className, style, target } = options;
+	const stateProps = functionalUpdate$1(isActive ? activeProps : inactiveProps, {}) ?? (isActive ? STATIC_ACTIVE_OBJECT : STATIC_EMPTY_OBJECT);
+	Object.assign(props, stateProps);
+	props.href = href;
+	if (host !== "a") props.disabled = linkDisabled;
+	props.target = target;
+	const stateStyle = stateProps.style;
+	if (style || stateStyle) props.style = style && stateStyle ? {
+		...style,
+		...stateStyle
+	} : style || stateStyle;
+	const stateClassName = stateProps.className;
+	if (className || stateClassName) props.className = className ? stateClassName ? `${className} ${stateClassName}` : className : stateClassName;
+	if (linkDisabled) {
+		props.role = "link";
+		props["aria-disabled"] = true;
+	}
+	if (isActive) {
+		props["data-status"] = "active";
+		props["aria-current"] = "page";
+	}
+	return props;
+}
+function getServerLinkProps(router, options, forwardedRef, host) {
+	const { to, disabled, activeOptions } = options;
+	const directExternalLink = resolveExternalLink(to, router.protocolAllowlist);
+	const next = directExternalLink === void 0 ? router.buildLocation(options) : void 0;
+	const hrefOption = next ? getHrefOption(next, router, disabled) : directExternalLink ?? void 0;
+	const linkDisabled = disabled || !hrefOption;
+	const externalLink = directExternalLink ?? (hrefOption && getUrlScheme(hrefOption) ? hrefOption : void 0);
+	const props = collectElementProps(options, host);
+	props.ref = forwardedRef;
+	if (externalLink) {
+		props.href = externalLink;
+		return props;
+	}
+	return applyLinkState(props, options, !!next && !(!disabled && !hrefOption) && resolveIsActive(router.stores.location.get(), next, activeOptions, router.basepath, false), hrefOption, linkDisabled, host);
+}
+function getHrefOption(next, router, disabled) {
+	if (disabled) return;
+	const location = next.maskedLocation ?? next;
+	const href = location.external ? location.publicHref : router.history.createHref(location.publicHref) || "/";
+	if ((location.external || href !== location.publicHref) && isDangerousProtocol(href, router.protocolAllowlist)) return;
+	return href;
+}
+/**
+* A strongly-typed anchor component for declarative navigation.
+* Handles path, search, hash and state updates with optional route preloading
+* and active-state styling.
+*
+* Props:
+* - `preload`: Controls route preloading (eg. 'intent', 'render', 'viewport', true/false)
+* - `preloadDelay`: Delay in ms before preloading on focus, hover, or viewport entry
+* - `activeProps`/`inactiveProps`: Additional props merged when link is active/inactive
+* - `resetScroll`/`hashScrollIntoView`: Control scroll behavior on navigation
+* - `viewTransition`/`startTransition`: Use View Transitions/React transitions for navigation
+* - `ignoreBlocker`: Bypass registered blockers
+*
+* @returns An anchor-like element that navigates without full page reloads.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/linkComponent
+*/
+var Link = import_react.memo(import_react.forwardRef((props, ref) => {
+	const host = props._asChild || "a";
+	const linkProps = useLinkProps(props, ref, host);
+	const children = typeof props.children === "function" ? props.children({ isActive: linkProps["data-status"] === "active" }) : props.children;
+	return import_react.createElement(host, linkProps, children);
+}), areLinkPropsEqual);
+function areLinkPropsEqual(prev, next) {
+	let extraKeys = 0;
+	for (const key in next) {
+		extraKeys++;
+		if (prev[key] === next[key]) continue;
+		if (!ROUTER_OPTION_KEYS.has(key) || !deepEqual(prev[key], next[key], false, true)) return false;
+	}
+	for (const _key in prev) extraKeys--;
+	return extraKeys === 0;
+}
+var Route$2 = class extends BaseRoute {
+	/**
+	* @deprecated Use the `createRoute` function instead.
+	*/
+	constructor(options) {
+		super(options);
+		this.useMatch = (opts) => {
+			return useMatch({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useRouteContext = (opts) => {
+			return useRouteContext({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useSearch = (opts) => {
+			return useSearch({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useParams = (opts) => {
+			return useParams({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useLoaderDeps = (opts) => {
+			return useLoaderDeps({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useLoaderData = (opts) => {
+			return useLoaderData({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useNavigate = () => {
+			return useNavigate({ from: this.fullPath });
+		};
+		this.Link = import_react.forwardRef((props, ref) => {
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+				ref,
+				from: this.fullPath,
+				...props
+			});
+		});
+	}
+};
+/**
+* Creates a non-root Route instance for code-based routing.
+*
+* Use this to define a route that will be composed into a route tree
+* (typically via a parent route's `addChildren`). If you're using file-based
+* routing, prefer `createFileRoute`.
+*
+* @param options Route options (path, component, loader, context, etc.).
+* @returns A Route instance to be attached to the route tree.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouteFunction
+*/
+function createRoute(options) {
+	return new Route$2(options);
+}
+/**
+* Creates a root route factory that requires a router context type.
+*
+* Use when your root route expects `context` to be provided to `createRouter`.
+* The returned function behaves like `createRootRoute` but enforces a context type.
+*
+* @returns A factory function to configure and return a root route.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRootRouteWithContextFunction
+*/
+function createRootRouteWithContext() {
+	return (options) => {
+		return createRootRoute(options);
+	};
+}
+var RootRoute = class extends BaseRootRoute {
+	/**
+	* @deprecated `RootRoute` is now an internal implementation detail. Use `createRootRoute()` instead.
+	*/
+	constructor(options) {
+		super(options);
+		this.useMatch = (opts) => {
+			return useMatch({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useRouteContext = (opts) => {
+			return useRouteContext({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useSearch = (opts) => {
+			return useSearch({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useParams = (opts) => {
+			return useParams({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useLoaderDeps = (opts) => {
+			return useLoaderDeps({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useLoaderData = (opts) => {
+			return useLoaderData({
+				...opts,
+				from: this.id
+			});
+		};
+		this.useNavigate = () => {
+			return useNavigate({ from: this.fullPath });
+		};
+		this.Link = import_react.forwardRef((props, ref) => {
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+				ref,
+				from: this.fullPath,
+				...props
+			});
+		});
+	}
+};
+/**
+* Creates a root Route instance used to build your route tree.
+*
+* Typically paired with `createRouter({ routeTree })`. If you need to require
+* a typed router context, use `createRootRouteWithContext` instead.
+*
+* @param options Root route options (component, error, pending, etc.).
+* @returns A root route instance.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRootRouteFunction
+*/
+function createRootRoute(options) {
+	return new RootRoute(options);
+}
+/**
+* Creates a file-based Route factory for a given path.
+*
+* Used by TanStack Router's file-based routing to associate a file with a
+* route. The returned function accepts standard route options. In normal usage
+* the `path` string is inserted and maintained by the `tsr` generator.
+*
+* @param path File path literal for the route (usually auto-generated).
+* @returns A function that accepts Route options and returns a Route instance.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createFileRouteFunction
+*/
+function createFileRoute(path) {
+	return (options) => {
+		const route = createRoute(options);
+		route.isRoot = false;
+		return route;
+	};
+}
+/**
+* Wrap a dynamic import to create a route component that supports
+* `.preload()` and friendly reload-on-module-missing behavior.
+*
+* @param importer Function returning a module promise
+* @param exportName Named export to use (default: `default`)
+* @returns A lazy route component compatible with TanStack Router
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/lazyRouteComponentFunction
+*/
+function lazyRouteComponent(importer, exportName) {
+	let loadPromise;
+	let comp;
+	let error;
+	const load = () => {
+		if (!loadPromise) {
+			error = void 0;
+			loadPromise = importer().then((res) => {
+				comp = res[exportName ?? "default"];
+			}).catch((err) => {
+				loadPromise = void 0;
+				error = err;
+			});
+		}
+		return loadPromise;
+	};
+	const lazyComp = function Lazy(props) {
+		if (error) {
+			if (isModuleNotFoundError(error) && false);
+			throw error;
+		}
+		if (!comp) if (reactUse) reactUse(load());
+		else throw load();
+		return import_react.createElement(comp, props);
+	};
+	lazyComp.preload = load;
+	return lazyComp;
+}
+var getStoreFactory = (opts) => {
+	return {
+		createMutableStore: createNonReactiveMutableStore,
+		createReadonlyStore: createNonReactiveReadonlyStore,
+		batch: (fn) => fn()
+	};
+};
+/**
+* Creates a new Router instance for React.
+*
+* Pass the returned router to `RouterProvider` to enable routing.
+* Notable options: `routeTree` (your route definitions) and `context`
+* (required if the root route was created with `createRootRouteWithContext`).
+*
+* @param options Router options used to configure the router.
+* @returns A Router instance to be provided to `RouterProvider`.
+* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
+*/
+var createRouter = (options) => {
+	return new Router(options);
+};
+var Router = class extends RouterCore {
+	constructor(options) {
+		super(options, getStoreFactory);
+	}
+};
+var noopScriptHandler = () => {};
+function setScriptAttrs(script, attrs) {
+	if (!attrs) return;
+	for (const [key, value] of Object.entries(attrs)) if (key !== "suppressHydrationWarning" && value !== void 0 && value !== false) script.setAttribute(key, typeof value === "boolean" ? "" : String(value));
+}
+function Asset(asset) {
+	const { attrs, children, nonce, preventScriptHoist } = asset;
+	const innerHTML = import_react.useMemo(() => children === void 0 ? void 0 : { __html: children }, [children]);
+	switch (asset.tag) {
+		case "title": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("title", {
+			...attrs,
+			suppressHydrationWarning: true,
+			children
+		});
+		case "meta": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("meta", {
+			...attrs,
+			suppressHydrationWarning: true
+		});
+		case "link": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("link", {
+			...attrs,
+			precedence: attrs?.precedence ?? (attrs?.rel === "stylesheet" ? "default" : void 0),
+			nonce,
+			suppressHydrationWarning: true
+		});
+		case "style":
+			if (asset.inlineCss && false);
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", {
+				...attrs,
+				dangerouslySetInnerHTML: innerHTML,
+				nonce
+			});
+		case "script": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Script, {
+			attrs,
+			preventScriptHoist,
+			children
+		});
+		default: return null;
+	}
+}
+function Script({ attrs, children, preventScriptHoist }) {
+	useRouter();
+	useHydrated();
+	const innerHTML = import_react.useMemo(() => children === void 0 ? void 0 : { __html: children }, [children]);
+	const dataScript = typeof attrs?.type === "string" && attrs.type !== "" && attrs.type !== "text/javascript" && attrs.type !== "module";
+	import_react.useEffect(() => {
+		if (dataScript) return;
+		if (attrs?.src) {
+			const link = document.createElement("a");
+			link.href = attrs.src;
+			const normSrc = link.href;
+			for (const el of document.scripts) if (el.src === normSrc) return;
+			const script = document.createElement("script");
+			setScriptAttrs(script, attrs);
+			document.head.appendChild(script);
+			return () => script.remove();
+		}
+		if (typeof children === "string") {
+			const typeAttr = typeof attrs?.type === "string" ? attrs.type : "text/javascript";
+			const nonceAttr = typeof attrs?.nonce === "string" ? attrs.nonce : void 0;
+			for (const el of document.scripts) {
+				if (el.hasAttribute("src")) continue;
+				const sType = el.getAttribute("type") ?? "text/javascript";
+				const sNonce = el.getAttribute("nonce") ?? void 0;
+				if (el.textContent === children && sType === typeAttr && sNonce === nonceAttr) return;
+			}
+			const script = document.createElement("script");
+			script.textContent = children;
+			setScriptAttrs(script, attrs);
+			document.head.appendChild(script);
+			return () => script.remove();
+		}
+	}, [
+		attrs,
+		children,
+		dataScript
+	]);
+	if (attrs?.src) {
+		if (!preventScriptHoist) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
+			...attrs,
+			suppressHydrationWarning: true
+		});
+		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
+			...attrs,
+			onLoad: noopScriptHandler,
+			suppressHydrationWarning: true
+		});
+	}
+	if (typeof children === "string") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
+		...attrs,
+		dangerouslySetInnerHTML: innerHTML,
+		suppressHydrationWarning: true
+	});
+	return null;
+}
+function buildTagsFromMatches(router, nonce, matches, assetCrossOrigin) {
+	matches = _getAssetMatches(matches);
+	const routeMeta = matches.map((match) => match.meta).filter((meta) => meta !== void 0);
+	const resultMeta = [];
+	const metaByAttribute = {};
+	let title;
+	for (let i = routeMeta.length - 1; i >= 0; i--) {
+		const metas = routeMeta[i];
+		for (let j = metas.length - 1; j >= 0; j--) {
+			const m = metas[j];
+			if (!m) continue;
+			if (m.title) {
+				if (!title) title = {
+					tag: "title",
+					children: m.title
+				};
+			} else if ("script:ld+json" in m) try {
+				const json = JSON.stringify(m["script:ld+json"]);
+				resultMeta.push({
+					tag: "script",
+					attrs: { type: "application/ld+json" },
+					children: escapeHtml(json)
+				});
+			} catch {}
+			else {
+				const attribute = m.name ?? m.property;
+				if (attribute) if (metaByAttribute[attribute]) continue;
+				else metaByAttribute[attribute] = true;
+				resultMeta.push({
+					tag: "meta",
+					attrs: {
+						...m,
+						nonce
+					}
+				});
+			}
+		}
+	}
+	if (title) resultMeta.push(title);
+	if (nonce) resultMeta.push({
+		tag: "meta",
+		attrs: {
+			property: "csp-nonce",
+			content: nonce
+		}
+	});
+	resultMeta.reverse();
+	const constructedLinks = matches.flatMap((match) => match.links ?? []).filter((link) => link !== void 0).map((link) => ({
+		tag: "link",
+		attrs: {
+			...link,
+			nonce
+		}
+	}));
+	const manifest = router.ssr?.manifest;
+	const manifestCssTags = [];
+	if (manifest) {
+		matches.forEach((match) => {
+			(manifest.routes[match.routeId]?.css)?.forEach((link) => {
+				const resolvedLink = resolveManifestCssLink(link);
+				manifestCssTags.push({
+					tag: "link",
+					attrs: {
+						rel: "stylesheet",
+						...resolvedLink,
+						crossOrigin: getAssetCrossOrigin(assetCrossOrigin, "stylesheet") ?? resolvedLink.crossOrigin,
+						suppressHydrationWarning: true,
+						nonce
+					}
+				});
+			});
+		});
+		if (manifest.inlineStyle) manifestCssTags.push({
+			tag: "style",
+			attrs: {
+				...manifest.inlineStyle.attrs,
+				nonce
+			},
+			children: manifest.inlineStyle.children,
+			inlineCss: true
+		});
+	}
+	const preloadLinks = [];
+	if (manifest) matches.forEach((match) => {
+		manifest.routes[match.routeId]?.preloads?.forEach((preload) => {
+			preloadLinks.push({
+				tag: "link",
+				attrs: {
+					...getScriptPreloadAttrs(manifest, preload, assetCrossOrigin),
+					nonce
+				}
+			});
+		});
+	});
+	const styles = matches.flatMap((match) => match.styles ?? []).filter((style) => style !== void 0).map(({ children, ...attrs }) => ({
+		tag: "style",
+		attrs: {
+			...attrs,
+			nonce
+		},
+		children
+	}));
+	const headScripts = matches.flatMap((match) => match.headScripts ?? []).filter((script) => script !== void 0).map(({ children, ...script }) => ({
+		tag: "script",
+		attrs: {
+			...script,
+			nonce
+		},
+		children
+	}));
+	const tags = [];
+	appendUniqueUserTags(tags, resultMeta);
+	tags.push(...preloadLinks);
+	appendUniqueUserTags(tags, constructedLinks);
+	tags.push(...manifestCssTags);
+	appendUniqueUserTags(tags, styles);
+	appendUniqueUserTags(tags, headScripts);
+	return tags;
+}
+/**
+* Build the head/link/meta/script tags from the renderable presented prefix.
+* Used internally by `HeadContent`.
+*/
+var useTags = (assetCrossOrigin) => {
+	const router = useRouter();
+	const nonce = router.options.ssr?.nonce;
+	return buildTagsFromMatches(router, nonce, router.stores.matches.get(), assetCrossOrigin);
+};
+/**
+* Render route-managed head tags (title, meta, links, styles, head scripts).
+* Place inside the document head of your app shell.
+* @link https://tanstack.com/router/latest/docs/framework/react/guide/document-head-management
+*/
+function HeadContent(props) {
+	const tags = useTags(props.assetCrossOrigin);
+	const nonce = useRouter().options.ssr?.nonce;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: tags.map((tag) => /* @__PURE__ */ (0, import_react.createElement)(Asset, {
+		...tag,
+		key: `tsr-meta-${JSON.stringify(tag)}`,
+		nonce
+	})) });
+}
+var routeScriptAttrs = { suppressHydrationWarning: true };
+/**
+* Render body script tags collected from route matches and SSR manifests.
+* During streaming SSR, `<Scripts>` marks where late hydration scripts may
+* begin to be inserted.
+*/
+var Scripts = () => {
+	const router = useRouter();
+	const nonce = router.options.ssr?.nonce;
+	const getParts = (matches) => {
+		const parts = getSsrBodyScriptParts(matches, router.ssr?.manifest, nonce, routeScriptAttrs);
+		for (const script of parts[1]) if (typeof script.attrs?.src === "string") {
+			const scriptWithHoist = script;
+			scriptWithHoist.preventScriptHoist = true;
+		}
+		return parts;
+	};
+	return renderScripts(composeSsrBodyScripts(getParts(router.stores.matches.get()), router.serverSsr?.takeInitialHydrationScriptTags()));
+};
+function renderScripts(scripts) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: scripts.map((asset, i) => /* @__PURE__ */ (0, import_react.createElement)(Asset, {
+		...asset,
+		key: `tsr-scripts-${asset.tag}-${i}`
+	})) });
+}
+/**
+* The context that `useQueryClient` reads from. `QueryClientProvider` is the normal way to set it.
+*/
+var QueryClientContext = import_react.createContext(void 0);
+/**
+* Use the `QueryClientProvider` component to connect and provide a `QueryClient` to your application. Also
+* calls `client.mount()`/`client.unmount()` as this component mounts/unmounts, which subscribes the client to
+* focus/online events (resuming any paused mutations and refetching as needed when the app regains focus or
+* comes back online).
+*
+* @returns The provided `children`, wrapped so they can read the `QueryClient` via `useQueryClient`.
+*
+* @example
+* ```tsx
+* import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+*
+* const queryClient = new QueryClient()
+*
+* function App() {
+*   return <QueryClientProvider client={queryClient}>...</QueryClientProvider>
+* }
+* ```
+*/
+var QueryClientProvider = ({ client, children }) => {
+	import_react.useEffect(() => {
+		client.mount();
+		return () => {
+			client.unmount();
+		};
+	}, [client]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(QueryClientContext.Provider, {
+		value: client,
+		children
+	});
+};
 var defaultTimeoutProvider = {
 	setTimeout: (callback, delay) => setTimeout(callback, delay),
 	clearTimeout: (timeoutId) => clearTimeout(timeoutId),
@@ -145,8 +1243,6 @@ var timeoutManager = new TimeoutManager();
 function systemSetTimeoutZero(callback) {
 	setTimeout(callback, 0);
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/utils.js
 /** @deprecated
 * use `environmentManager.isServer()` instead.
 */
@@ -355,15 +1451,11 @@ function addConsumeAwareSignal(object, getSignal, onCancelled) {
 	});
 	return object;
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/environmentManager.js
 var isServerFn = () => isServer$1;
 /**
 * Returns whether the current runtime should be treated as a server environment.
 */
 var isServer = () => isServerFn();
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/subscribable.js
 /**
 * The base class behind everything in Query that you can subscribe to: `QueryCache`, `MutationCache`,
 * the observers, and the `FocusManager`/`OnlineManager` behind `focusManager` and `onlineManager`.
@@ -405,8 +1497,6 @@ var Subscribable = class {
 	onSubscribe() {}
 	onUnsubscribe() {}
 };
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/focusManager.js
 /**
 * The `FocusManager` manages the focus state within TanStack Query.
 *
@@ -515,8 +1605,6 @@ var FocusManager = class extends Subscribable {
 * Singleton instance of {@link FocusManager}, used to manage and observe the focus state within TanStack Query.
 */
 var focusManager = new FocusManager();
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/notifyManager.js
 /**
 * Default scheduling function used by the notify manager.
 * Schedules the callback with the system's `setTimeout(callback, 0)`.
@@ -632,8 +1720,6 @@ function createNotifyManager() {
 * Handles scheduling and batching callbacks in TanStack Query.
 */
 var notifyManager = createNotifyManager();
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/onlineManager.js
 /**
 * The `OnlineManager` manages the online state within TanStack Query. It can
 * be used to change the default event listeners or to manually change the
@@ -727,8 +1813,6 @@ var OnlineManager = class extends Subscribable {
 * Singleton instance of {@link OnlineManager}, used to manage and observe the online state within TanStack Query.
 */
 var onlineManager = new OnlineManager();
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/retryer.js
 function defaultRetryDelay(failureCount) {
 	return Math.min(1e3 * 2 ** failureCount, 3e4);
 }
@@ -860,8 +1944,6 @@ function createRetryer(config) {
 		}
 	};
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/removable.js
 /**
 * The base class for cache entries that are garbage collected once nothing is using them —
 * `Query` and `Mutation` both extend it. `gcTime` controls how long an unused entry is kept.
@@ -892,8 +1974,6 @@ var Removable = class {
 		}
 	}
 };
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/infiniteQueryBehavior.js
 function infiniteQueryBehavior(pages) {
 	return { onFetch: (context, query) => {
 		const options = context.options;
@@ -971,8 +2051,6 @@ function getNextPageParam(options, { pages, pageParams }) {
 function getPreviousPageParam(options, { pages, pageParams }) {
 	return pages.length > 0 ? options.getPreviousPageParam?.(pages[0], pages, pageParams[0], pageParams) : void 0;
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/query.js
 /**
 * Represents a single cached query. A `Query` holds the query's key, options,
 * state (data/error/status), and the observers currently subscribed to it.
@@ -1483,8 +2561,6 @@ function getDefaultState$1(options) {
 		fetchStatus: "idle"
 	};
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/mutation.js
 /**
 * Represents a single mutation attempt. A `Mutation` holds the mutation's
 * options, state (data/error/status), and the `MutationObserver`s currently
@@ -1772,8 +2848,6 @@ function getDefaultState() {
 		submittedAt: 0
 	};
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/mutationCache.js
 /**
 * The `MutationCache` is the storage for mutations.
 *
@@ -1953,8 +3027,6 @@ var MutationCache = class extends Subscribable {
 function scopeFor(mutation) {
 	return mutation.options.scope?.id;
 }
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/queryCache.js
 /**
 * The `QueryCache` is the storage mechanism for TanStack Query. It stores all the data, meta
 * information, and state of the queries it contains.
@@ -2164,8 +3236,6 @@ var QueryCache = class extends Subscribable {
 		});
 	}
 };
-//#endregion
-//#region node_modules/@tanstack/query-core/build/modern/queryClient.js
 /**
 * `QueryClient` is used to interact with a cache of queries and mutations. It owns a
 * `QueryCache` and a `MutationCache` (creating default ones if none are passed in) and holds
@@ -2808,5 +3878,272 @@ var QueryClient = class {
 		this.#mutationCache.clear();
 	}
 };
+var Toaster = ({ ...props }) => {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster$1, {
+		className: "toaster group",
+		toastOptions: { classNames: {
+			toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+			description: "group-[.toast]:text-muted-foreground",
+			actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+			cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground"
+		} },
+		...props
+	});
+};
+var styles_default = "/assets/styles-BqI2Y7H_.css";
+function NotFoundComponent() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "flex min-h-screen items-center justify-center bg-background px-4",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "max-w-md text-center",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+					className: "text-7xl font-bold text-foreground",
+					children: "404"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+					className: "mt-4 text-xl font-semibold text-foreground",
+					children: "Page not found"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-2 text-sm text-muted-foreground",
+					children: "The page you're looking for doesn't exist or has been moved."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "mt-6",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+						to: "/",
+						className: "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
+						children: "Go home"
+					})
+				})
+			]
+		})
+	});
+}
+function ErrorComponent({ error, reset }) {
+	console.error("Root boundary error:", error);
+	const router = useRouter();
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "flex min-h-screen items-center justify-center bg-background px-4",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "max-w-md text-center",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+					className: "text-xl font-semibold tracking-tight text-foreground",
+					children: "This page didn't load"
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "mt-2 text-sm text-muted-foreground",
+					children: "Something went wrong on our end. You can try refreshing or head back home."
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "mt-6 flex flex-wrap justify-center gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						onClick: () => {
+							router.invalidate();
+							reset();
+						},
+						className: "inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
+						children: "Try again"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+						href: "/",
+						className: "inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent",
+						children: "Go home"
+					})]
+				})
+			]
+		})
+	});
+}
+var Route$1 = createRootRouteWithContext()({
+	head: () => ({
+		meta: [
+			{ charSet: "utf-8" },
+			{
+				name: "viewport",
+				content: "width=device-width, initial-scale=1"
+			},
+			{ title: "The Cake Vault | Best Cake Shop & Bakery in Pune | Custom & Eggless Cakes" },
+			{
+				name: "description",
+				content: "Top-rated bakery & cake shop in Pune with 5 verified locations (Lohegaon Rd / Dhanori, Old Mundhwa Rd, Pimpri-Chinchwad, Ganesh Park, Santosh Mangal Karyalay). Order fresh 100% eggless cakes, custom birthday cakes, rasmalai cakes & same-day delivery. Rated 4.9⭐ by 332+ happy customers."
+			},
+			{
+				name: "keywords",
+				content: "cake shop in pune, bakery in pune, best cake shop lohegaon, cake delivery mundhwa, cake vault pimpri chinchwad, custom birthday cakes pune, eggless cakes pune, rasmalai cake pune, red velvet cake, same day cake delivery pune, cake shop near me, designer cakes pune"
+			},
+			{
+				name: "author",
+				content: "The Cake Vault"
+			},
+			{
+				name: "robots",
+				content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+			},
+			{
+				name: "googlebot",
+				content: "index, follow"
+			},
+			{
+				name: "geo.region",
+				content: "IN-MH"
+			},
+			{
+				name: "geo.placename",
+				content: "Pune, Maharashtra, India"
+			},
+			{
+				name: "geo.position",
+				content: "18.5204303;73.8567437"
+			},
+			{
+				name: "ICBM",
+				content: "18.5204303, 73.8567437"
+			},
+			{
+				property: "og:site_name",
+				content: "The Cake Vault"
+			},
+			{
+				property: "og:locale",
+				content: "en_IN"
+			},
+			{
+				property: "og:title",
+				content: "The Cake Vault | Best Cake Shop & Bakery in Pune | Custom & Eggless Cakes"
+			},
+			{
+				property: "og:description",
+				content: "Top-rated bakery with 5 verified locations across Pune & Pimpri-Chinchwad. Fresh eggless cakes, rasmalai cakes, custom birthday designs & same-day delivery."
+			},
+			{
+				property: "og:type",
+				content: "website"
+			},
+			{
+				property: "og:url",
+				content: "https://thecakevault.in"
+			},
+			{
+				name: "twitter:card",
+				content: "summary_large_image"
+			},
+			{
+				name: "twitter:title",
+				content: "The Cake Vault | Best Cake Shop & Bakery in Pune"
+			},
+			{
+				name: "twitter:description",
+				content: "Fresh eggless cakes, rasmalai cakes & custom designer birthday cakes. 5 verified store locations across Pune."
+			}
+		],
+		links: [
+			{
+				rel: "canonical",
+				href: "https://thecakevault.in"
+			},
+			{
+				rel: "stylesheet",
+				href: styles_default
+			},
+			{
+				rel: "preconnect",
+				href: "https://fonts.googleapis.com"
+			},
+			{
+				rel: "preconnect",
+				href: "https://fonts.gstatic.com",
+				crossOrigin: "anonymous"
+			},
+			{
+				rel: "stylesheet",
+				href: "https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+			},
+			{
+				rel: "icon",
+				href: "/favicon.ico",
+				type: "image/x-icon"
+			}
+		]
+	}),
+	shellComponent: RootShell,
+	component: RootComponent,
+	notFoundComponent: NotFoundComponent,
+	errorComponent: ErrorComponent
+});
+function RootShell({ children }) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("html", {
+		lang: "en",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeadContent, {}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("body", { children: [children, /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Scripts, {})] })]
+	});
+}
+function RootComponent() {
+	const { queryClient } = Route$1.useRouteContext();
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(QueryClientProvider, {
+		client: queryClient,
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Outlet, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster, { position: "bottom-right" })]
+	});
+}
+var $$splitComponentImporter = () => import("./routes-CNIX4aOk.mjs");
+var rootRouteChildren = { IndexRoute: createFileRoute("/")({
+	head: () => ({ meta: [
+		{ title: "The Cake Vault | #1 Cake Shop Near Me in Dhanori, Mundhwa & Pune | 100% Eggless Custom Cakes" },
+		{
+			name: "description",
+			content: "Looking for the best cake shop near you in Pune? The Cake Vault offers 100% eggless gourmet cakes, custom birthday designer cakes & express same-day delivery across Dhanori, Lohegaon Rd, Old Mundhwa Rd, & Pimpri-Chinchwad. Call/WhatsApp +91 84830 97680!"
+		},
+		{
+			name: "keywords",
+			content: "cake shop near me, best cake shop in Pune, cake shop Dhanori, cake shop Lohegaon Road, cake shop Old Mundhwa Road, cake shop Pimpri Chinchwad, eggless cake shop near me, custom birthday cake Pune, same day cake delivery Pune, Rasmalai cake Pune, pastry shop Pune"
+		},
+		{
+			name: "geo.position",
+			content: "18.52043;73.85674"
+		},
+		{
+			name: "geo.placename",
+			content: "Pune, Maharashtra, India"
+		},
+		{
+			name: "geo.region",
+			content: "IN-MH"
+		},
+		{
+			property: "og:title",
+			content: "The Cake Vault | #1 Cake Shop Near Me in Pune | 100% Eggless Custom Cakes"
+		},
+		{
+			property: "og:description",
+			content: "Order 100% eggless artisan cakes with same-day express delivery across 5 official stores in Pune & Pimpri-Chinchwad. Call +91 84830 97680!"
+		},
+		{
+			property: "og:type",
+			content: "website"
+		},
+		{
+			property: "og:locale",
+			content: "en_IN"
+		},
+		{
+			name: "twitter:card",
+			content: "summary_large_image"
+		}
+	] }),
+	component: lazyRouteComponent($$splitComponentImporter, "component")
+}).update({
+	id: "/",
+	path: "/",
+	getParentRoute: () => Route$1
+}) };
+var routeTree = Route$1._addFileChildren(rootRouteChildren)._addFileTypes();
+var getRouter = () => {
+	return createRouter({
+		routeTree,
+		context: { queryClient: new QueryClient() },
+		scrollRestoration: true,
+		defaultPreloadStaleTime: 0
+	});
+};
 //#endregion
-export { QueryClient as t };
+export { getRouter };

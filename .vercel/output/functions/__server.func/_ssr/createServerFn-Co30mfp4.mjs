@@ -1,7 +1,62 @@
-import { U as isRedirect, W as parseRedirect } from "../_libs/@tanstack/react-router+[...].mjs";
-import { a as mergeHeaders } from "../_libs/@tanstack/router-core+[...].mjs";
+import { n as parseRedirect, t as isRedirect } from "./redirect-jkG3vMHM.mjs";
 import { AsyncLocalStorage } from "node:async_hooks";
-//#region node_modules/.nitro/vite/services/ssr/assets/createServerFn-DDDJMFWM.js
+//#region node_modules/.nitro/vite/services/ssr/assets/createServerFn-Co30mfp4.js
+function splitSetCookieString(cookiesString) {
+	if (Array.isArray(cookiesString)) return cookiesString.flatMap((c) => splitSetCookieString(c));
+	if (typeof cookiesString !== "string") return [];
+	const cookiesStrings = [];
+	let pos = 0;
+	let start;
+	let ch;
+	let lastComma;
+	let nextStart;
+	let cookiesSeparatorFound;
+	const skipWhitespace = () => {
+		while (pos < cookiesString.length && /\s/.test(cookiesString.charAt(pos))) pos += 1;
+		return pos < cookiesString.length;
+	};
+	const notSpecialChar = () => {
+		ch = cookiesString.charAt(pos);
+		return ch !== "=" && ch !== ";" && ch !== ",";
+	};
+	while (pos < cookiesString.length) {
+		start = pos;
+		cookiesSeparatorFound = false;
+		while (skipWhitespace()) {
+			ch = cookiesString.charAt(pos);
+			if (ch === ",") {
+				lastComma = pos;
+				pos += 1;
+				skipWhitespace();
+				nextStart = pos;
+				while (pos < cookiesString.length && notSpecialChar()) pos += 1;
+				if (pos < cookiesString.length && cookiesString.charAt(pos) === "=") {
+					cookiesSeparatorFound = true;
+					pos = nextStart;
+					cookiesStrings.push(cookiesString.slice(start, lastComma));
+					start = pos;
+				} else pos = lastComma + 1;
+			} else pos += 1;
+		}
+		if (!cookiesSeparatorFound || pos >= cookiesString.length) cookiesStrings.push(cookiesString.slice(start));
+	}
+	return cookiesStrings;
+}
+function toHeadersInstance(init) {
+	if (init instanceof Headers) return init;
+	else if (Array.isArray(init)) return new Headers(init);
+	else if (typeof init === "object") return new Headers(init);
+	else return null;
+}
+function mergeHeaders(...headers) {
+	return headers.reduce((acc, header) => {
+		const headersInstance = toHeadersInstance(header);
+		if (!headersInstance) return acc;
+		for (const [key, value] of headersInstance.entries()) if (key === "set-cookie") splitSetCookieString(value).forEach((cookie) => acc.append("set-cookie", cookie));
+		else acc.set(key, value);
+		return acc;
+	}, new Headers());
+}
 var TSS_FORMDATA_CONTEXT = "__TSS_CONTEXT";
 var TSS_SERVER_FUNCTION = Symbol.for("TSS_SERVER_FUNCTION");
 var TSS_SERVER_FUNCTION_FACTORY = Symbol.for("TSS_SERVER_FUNCTION_FACTORY");
@@ -250,4 +305,4 @@ function serverFnBaseToMiddleware(options) {
 	};
 }
 //#endregion
-export { TSS_SERVER_FUNCTION as a, createNullProtoObject as c, getStartContext as d, getStartOptions as f, TSS_FORMDATA_CONTEXT as i, createServerFn as l, safeObjectMerge as m, MAX_FRAME_PAYLOAD_SIZE as n, X_TSS_RAW_RESPONSE as o, runWithStartContext as p, TSS_CONTENT_TYPE_FRAMED_VERSIONED as r, X_TSS_SERIALIZED as s, MAX_FRAMED_STREAMS as t, flattenMiddlewares as u };
+export { TSS_SERVER_FUNCTION as a, createNullProtoObject as c, getStartContext as d, getStartOptions as f, safeObjectMerge as h, TSS_FORMDATA_CONTEXT as i, createServerFn as l, runWithStartContext as m, MAX_FRAME_PAYLOAD_SIZE as n, X_TSS_RAW_RESPONSE as o, mergeHeaders as p, TSS_CONTENT_TYPE_FRAMED_VERSIONED as r, X_TSS_SERIALIZED as s, MAX_FRAMED_STREAMS as t, flattenMiddlewares as u };

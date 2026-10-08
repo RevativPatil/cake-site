@@ -1,7 +1,7 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/__23tanstack-start-server-fn-resolver-5Pnrn8GS.js
+//#region node_modules/.nitro/vite/services/ssr/assets/__23tanstack-start-server-fn-resolver-MWLVGIMB.js
 var manifest = { "c4f962364d2c89600e953e9a94fe8bad3185671d0346de51a65ef9c286259079": {
 	functionName: "submitCakeOrderRequest_createServerFn_handler",
-	importer: () => import("./_ssr/cake-orders.functions-BScV7Zq_.mjs")
+	importer: () => import("./_ssr/cake-orders.functions-jQHllsvk.mjs")
 } };
 async function getServerFnById(id, access) {
 	const serverFnInfo = manifest[id];

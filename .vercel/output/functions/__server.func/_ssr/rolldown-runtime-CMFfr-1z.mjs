@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-//#region \0rolldown/runtime.js
+//#region node_modules/.nitro/vite/services/ssr/assets/rolldown-runtime-CMFfr-1z.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;

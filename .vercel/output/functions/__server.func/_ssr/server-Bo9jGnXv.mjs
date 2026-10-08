@@ -1,3520 +1,23 @@
-import { n as __require, r as __toESM, t as __commonJSMin } from "../../_runtime.mjs";
-import { i as parseHref, r as normalizeProtocolRelative } from "../tanstack__history.mjs";
-import { _ as require_jsx_runtime, g as require_react_dom, v as require_react } from "../@radix-ui/react-accordion+[...].mjs";
+import { t as isRedirect } from "./redirect-jkG3vMHM.mjs";
+import { a as TSS_SERVER_FUNCTION, c as createNullProtoObject, d as getStartContext, f as getStartOptions, h as safeObjectMerge, i as TSS_FORMDATA_CONTEXT, m as runWithStartContext, n as MAX_FRAME_PAYLOAD_SIZE, o as X_TSS_RAW_RESPONSE, p as mergeHeaders, r as TSS_CONTENT_TYPE_FRAMED_VERSIONED, s as X_TSS_SERIALIZED, t as MAX_FRAMED_STREAMS, u as flattenMiddlewares } from "./createServerFn-Co30mfp4.mjs";
+import { n as __require, r as __toESM, t as __commonJSMin } from "./rolldown-runtime-CMFfr-1z.mjs";
+import { n as require_react, r as require_react_dom, t as require_jsx_runtime } from "./react-dom-BO7wXRLj.mjs";
+import { A as isPromise, C as getStylesheetHref, D as isDangerousProtocol, E as invariant, F as resolveManifestAssetLink, H as useLayoutEffect, I as resolveManifestCssLink, L as rootRouteId, P as renderPending, R as routerContext, S as getScriptPreloadAttrs, T as hasKeys, U as useRouter, W as waitForReason, h as decodePath, k as isNotFound, l as createInlineCssPlaceholderAsset, m as createSieveCache, n as Match, o as _getRenderedMatches, p as createServerHistory, t as CatchBoundary, u as createInlineCssStyleAsset, y as executeRewriteInput } from "./Match-DkEhPuOS.mjs";
+import { t as getServerFnById } from "../__23tanstack-start-server-fn-resolver-MWLVGIMB.mjs";
+import { t as createCsrfMiddleware } from "./createCsrfMiddleware-B2To0gPJ.mjs";
 import { PassThrough, Readable } from "node:stream";
-//#region node_modules/@tanstack/router-core/dist/esm/not-found.js
-/** Determine if a value is a TanStack Router not-found error. */
-function isNotFound(obj) {
-	return obj?.isNotFound === true;
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/root.js
-/** Stable identifier used for the root route in a route tree. */
-var rootRouteId = "__root__";
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/redirect.js
-/**
-* Create a redirect Response understood by TanStack Router.
-*
-* Use from route `loader`/`beforeLoad` or server functions to trigger a
-* navigation. If `throw: true` is set, the redirect is thrown instead of
-* returned. External `href` values are classified as full-document
-* navigations when the router resolves the redirect.
-*
-* @param opts Options for the redirect. Common fields:
-* - `href`: absolute URL for external redirects.
-* - `statusCode`: HTTP status code to use (defaults to 307).
-* - `headers`: additional headers to include on the Response.
-* - Standard navigation options like `to`, `params`, `search`, `replace`,
-*   and `reloadDocument` for internal redirects.
-* @returns A Response augmented with router navigation options.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/redirectFunction
-*/
-function redirect(opts) {
-	opts.statusCode = opts.statusCode || opts.code || 307;
-	const headers = new Headers(opts.headers);
-	if (opts.href && headers.get("Location") === null) headers.set("Location", opts.href);
-	const response = new Response(null, {
-		status: opts.statusCode,
-		headers
-	});
-	response.options = opts;
-	if (opts.throw) throw response;
-	return response;
-}
-/** Check whether a value is a TanStack Router redirect Response. */
-function isRedirect(obj) {
-	return obj instanceof Response && !!obj.options;
-}
-/** Parse a serialized redirect object back into a redirect Response. */
-function parseRedirect(obj) {
-	if (obj !== null && typeof obj === "object" && obj.isSerializedRedirect) return redirect(obj);
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/ssr-match-id.js
+import { AsyncLocalStorage } from "node:async_hooks";
+//#region node_modules/.nitro/vite/services/ssr/assets/server-Bo9jGnXv.js
 function dehydrateSsrMatchId(id) {
 	return id.replaceAll("~", "~~").replaceAll("\0", "~0").replaceAll("�", "~r").replaceAll("/", "\0");
 }
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/path.js
-/** Remove repeated slashes from a path string. */
-function cleanPath(path) {
-	return path.replace(/\/{2,}/g, "/");
-}
-/** Trim leading slashes (except preserving root '/'). */
-function trimPathLeft(path) {
-	return path === "/" ? path : path.replace(/^\/+/, "");
-}
-/** Trim trailing slashes (except preserving root '/'). */
-function trimPathRight(path) {
-	const len = path.length;
-	return len > 1 && path[len - 1] === "/" ? path.replace(/\/+$/, "") : path;
-}
-/** Trim both leading and trailing slashes. */
-function trimPath(path) {
-	return trimPathRight(trimPathLeft(path));
-}
-/** Remove a trailing slash from value when appropriate for comparisons. */
-function removeTrailingSlash(value, basepath) {
-	if (value?.endsWith("/") && value !== "/" && value !== `${basepath}/`) return value.slice(0, -1);
-	return value;
-}
 /**
-* Resolve a destination path against a base, honoring trailing-slash policy
-* and supporting relative segments (`.`/`..`) and absolute `to` values.
-*
-* Internal: parameters are positional so the router's hot callers pass no
-* options object.
+* Create a strongly-typed serialization adapter for SSR hydration.
+* Use to register custom types with the router serializer.
 */
-function resolvePath(base, to, trailingSlash = "never", cache) {
-	if (to.includes("//")) to = cleanPath(to);
-	if (to.startsWith("/")) {
-		if (to.length === 1 || trailingSlash === "preserve") return to;
-		if (trailingSlash === "always") return to.endsWith("/") ? to : `${to}/`;
-		return to.endsWith("/") ? to.slice(0, -1) : to;
-	}
-	const isBase = to === ".";
-	let key;
-	if (cache) {
-		key = isBase ? base : base + "\0" + to;
-		const cached = cache.get(key);
-		if (cached) return cached;
-	}
-	let baseSegments;
-	if (isBase) baseSegments = base.split("/");
-	else {
-		if (base.includes("//")) base = cleanPath(base);
-		baseSegments = base.split("/");
-		while (baseSegments.length > 1 && last(baseSegments) === "") baseSegments.pop();
-		const toSegments = to.split("/");
-		for (let index = 0, length = toSegments.length; index < length; index++) {
-			const value = toSegments[index];
-			if (value === "") {
-				if (!index) baseSegments = [value];
-				else if (index === length - 1) baseSegments.push(value);
-			} else if (value === "..") if (baseSegments.length > 1) baseSegments.pop();
-			else baseSegments = [""];
-			else if (value === ".") {} else baseSegments.push(value);
-		}
-	}
-	if (baseSegments.length > 1) {
-		if (last(baseSegments) === "") {
-			if (trailingSlash === "never") baseSegments.pop();
-		} else if (trailingSlash === "always") baseSegments.push("");
-	}
-	const joined = baseSegments.join("/");
-	const result = (isBase ? cleanPath(joined) : joined) || "/";
-	if (key && cache) cache.set(key, result);
-	return result;
+function createSerializationAdapter(opts) {
+	return opts;
 }
-/**
-* Create a pre-compiled decode config from allowed characters.
-* Created once for the router's fixed encoding configuration.
-*/
-function compileDecodeCharMap(pathParamsAllowedCharacters) {
-	const charMap = new Map(pathParamsAllowedCharacters.map((char) => [encodeURIComponent(char), char]));
-	const regex = new RegExp([...charMap.keys()].join("|").replace(/[.*()]/g, "\\$&"), "g");
-	return (encoded) => encoded.replace(regex, (match) => charMap.get(match) ?? match);
-}
-/** A splat is missing when it has no value; `0` and `false` are stringified like any other param. */
-function isMissingSplat(value) {
-	return value == null || value === "";
-}
-function encodeParam(key, value, decoder) {
-	if (typeof value !== "string") return "" + (value ?? void 0);
-	const splat = key === "_splat";
-	if (splat && (!value || /^[a-zA-Z0-9\-._~!/]*$/.test(value))) return value;
-	let encoded = encodeURIComponent(value);
-	if (splat) encoded = encoded.replaceAll("%2F", "/");
-	return decoder ? decoder(encoded) : encoded;
-}
-/** Substitute current values into parsed segments, optionally collecting raw params. */
-function interpolatePath(path, segments, params, decoder, usedParams) {
-	const trailingSlash = path.endsWith("/") ? "/" : "";
-	let joined = "";
-	for (const part of segments) {
-		if (typeof part === "string") {
-			joined += part;
-			continue;
-		}
-		const [kind, key, prefix, rawSuffix] = part;
-		const splat = kind === 2;
-		const suffix = splat && rawSuffix !== void 0 ? rawSuffix + trailingSlash : rawSuffix;
-		let paramValue = params[key];
-		if (kind === 3 && paramValue == null) continue;
-		if (usedParams) {
-			usedParams[key] = paramValue;
-			if (splat) usedParams["*"] = paramValue;
-		}
-		if (splat && isMissingSplat(paramValue)) {
-			if (prefix === "/" && !suffix) continue;
-			paramValue = "";
-		}
-		joined += prefix + encodeParam(key, paramValue, decoder) + (suffix || "");
-	}
-	return joined + trailingSlash || "/";
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/sieve-cache.js
-/**
-* A fixed-capacity cache using the SIEVE eviction algorithm
-* (https://cachemon.github.io/SIEVE-website/).
-*
-* Entries live in the Map's FIFO insertion order; a hit only flips a `visited`
-* bit instead of relinking the entry, which makes `get` (by far the hottest
-* operation here) one `Map.get` plus a boolean store. Eviction sweeps a `hand`
-* from the oldest entry towards the newest, clearing `visited` bits until it
-* finds an unvisited entry to drop, so entries touched since the last sweep
-* survive one more round. This keeps LRU-like hit ratios while being
-* scan-resistant.
-*/
-function createSieveCache(max) {
-	const cache = /* @__PURE__ */ new Map();
-	let hand;
-	let newest;
-	return {
-		get(key) {
-			const entry = cache.get(key);
-			if (!entry) return;
-			entry.visited = true;
-			return entry.value;
-		},
-		set(key, value) {
-			const existing = cache.get(key);
-			if (existing) {
-				existing.value = value;
-				return;
-			}
-			if (cache.size >= max) {
-				let node = hand?.next().value;
-				while (!node || node.visited) {
-					if (node) node.visited = false;
-					else hand = cache.values();
-					node = hand.next().value;
-				}
-				if (node === newest) hand = void 0;
-				cache.delete(node.key);
-			}
-			const entry = {
-				key,
-				value,
-				visited: false
-			};
-			newest = entry;
-			cache.set(key, entry);
-		},
-		clear() {
-			cache.clear();
-			hand = void 0;
-			newest = void 0;
-		}
-	};
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/invariant.js
-function invariant() {
-	throw new Error("Invariant failed");
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/new-process-route-tree.js
-var SEGMENT_TYPE_INDEX = 4;
-var SEGMENT_TYPE_PATHLESS = 5;
-function getParamNames(data) {
-	const cached = data.names;
-	if (cached) return cached;
-	const keys = [];
-	for (const segment of data) if (typeof segment !== "string") keys.push(segment[1]);
-	return data.names = keys;
-}
-/** Parse one segment for matching and retain the same record for interpolation. */
-function parseSegment(path, start, end) {
-	const part = path.substring(start, end);
-	if (part.charCodeAt(0) === 36) return part.length === 1 ? [
-		2,
-		"_splat",
-		"",
-		void 0
-	] : [
-		1,
-		part.substring(1),
-		"",
-		""
-	];
-	const open = part.indexOf("{");
-	if (open >= 0) {
-		const close = part.indexOf("}", open);
-		const optional = part.charCodeAt(open + 1) === 45;
-		const nameStart = open + (optional ? 3 : 2);
-		if (close >= 0 && part.charCodeAt(nameStart - 1) === 36 && (!optional || nameStart < close)) {
-			const key = part.substring(nameStart, close);
-			return [
-				optional ? 3 : key ? 1 : 2,
-				key || "_splat",
-				part.substring(0, open),
-				path.substring(start + close + 1, key ? end : path.length)
-			];
-		}
-	}
-	return part;
-}
-function parseSegments(defaultCaseSensitive, route, start, node, dynamicListsToSort, parentInterpolation) {
-	let cursor = start;
-	const path = route.fullPath ?? route.from;
-	const options = route.options;
-	const length = path.length;
-	const literalEnd = path.endsWith("/") ? length - 1 : length;
-	const caseSensitive = options?.caseSensitive ?? defaultCaseSensitive;
-	const parseParams = options?.params?.parse ?? options?.parseParams;
-	let interpolation;
-	let literalStart = parentInterpolation ? start - 1 : 0;
-	if (!node || path.includes("$")) {
-		interpolation = parentInterpolation?.slice() ?? [];
-		const tail = last(interpolation);
-		if (tail && typeof tail !== "string" && tail[0] === 2) {
-			interpolation[interpolation.length - 1] = [
-				tail[0],
-				tail[1],
-				tail[2],
-				tail[3] === void 0 ? void 0 : tail[3] + path.substring(start - (path[start - 2] === "/" ? 2 : 1), literalEnd)
-			];
-			literalStart = length;
-		}
-	}
-	while (cursor < length) {
-		const start = cursor;
-		const next = path.indexOf("/", start);
-		let end = next === -1 ? length : next;
-		const segment = parseSegment(path, start, end);
-		cursor = end + 1;
-		let nextNode;
-		if (typeof segment === "string") {
-			if (!node) continue;
-			let name = segment;
-			let staticChildren;
-			if (caseSensitive) staticChildren = node.static ??= /* @__PURE__ */ new Map();
-			else {
-				name = segment.toLowerCase();
-				staticChildren = node.staticInsensitive ??= /* @__PURE__ */ new Map();
-			}
-			const existingNode = staticChildren.get(name);
-			if (existingNode) nextNode = existingNode;
-			else {
-				const next = createSegmentNode(node);
-				nextNode = next;
-				staticChildren.set(name, next);
-			}
-		} else {
-			const kind = segment[0];
-			let prefix = segment[2];
-			let suffix = segment[3] ?? "";
-			if (kind === 2) {
-				end = length;
-				cursor = end + 1;
-			}
-			if (interpolation && literalStart < end) {
-				if (literalStart < start - 1) interpolation.push(path.substring(literalStart, start - 1));
-				segment[2] = "/" + prefix;
-				if (kind === 2 && segment[3] !== void 0 && literalEnd < length) segment[3] = suffix.slice(0, -1);
-				interpolation.push(segment);
-				literalStart = end;
-			}
-			if (!node) continue;
-			const actuallyCaseSensitive = caseSensitive && !!(prefix || suffix);
-			if (!caseSensitive) {
-				prefix = prefix.toLowerCase();
-				suffix = suffix.toLowerCase();
-			}
-			const siblings = kind === 1 ? node.dynamic ??= [] : kind === 3 ? node.optional ??= [] : node.wildcard ??= [];
-			const existingNode = kind !== 2 && !parseParams && siblings.find((s) => !s.parse && s.caseSensitive === actuallyCaseSensitive && s.prefix === prefix && s.suffix === suffix);
-			if (existingNode) nextNode = existingNode;
-			else {
-				const next = createSegmentNode(node, kind, actuallyCaseSensitive, prefix, suffix);
-				nextNode = next;
-				siblings.push(next);
-				if (siblings.length === 2) dynamicListsToSort?.push(siblings);
-			}
-		}
-		node = nextNode;
-	}
-	if (interpolation && literalStart < literalEnd) interpolation.push(path.substring(literalStart, literalEnd));
-	const segmentData = interpolation?.slice();
-	if (!node) return segmentData;
-	if (parseParams && route.children && !route.isRoot && route.id && route.id.charCodeAt(route.id.lastIndexOf("/") + 1) === 95) {
-		const pathlessNode = createSegmentNode(node, SEGMENT_TYPE_PATHLESS);
-		(node.pathless ??= []).push(pathlessNode);
-		node = pathlessNode;
-	}
-	const isLeaf = (route.path || !route.children) && !route.isRoot;
-	if (isLeaf && literalEnd < length) {
-		const indexNode = createSegmentNode(node, SEGMENT_TYPE_INDEX);
-		node.index = indexNode;
-		node = indexNode;
-	}
-	node.parse = parseParams ?? null;
-	node.priority = options?.params?.priority ?? 0;
-	if (!node.route) {
-		node.data = segmentData;
-		if (isLeaf) node.route = route;
-	}
-	return [
-		node,
-		cursor,
-		segmentData
-	];
-}
-function sortDynamic(a, b) {
-	if (a.parse && !b.parse) return -1;
-	if (!a.parse && b.parse) return 1;
-	if (a.parse && b.parse && (a.priority || b.priority)) return b.priority - a.priority;
-	if (a.prefix && b.prefix && a.prefix !== b.prefix) {
-		if (a.prefix.startsWith(b.prefix)) return -1;
-		if (b.prefix.startsWith(a.prefix)) return 1;
-	}
-	if (a.suffix && b.suffix && a.suffix !== b.suffix) {
-		if (a.suffix.endsWith(b.suffix)) return -1;
-		if (b.suffix.endsWith(a.suffix)) return 1;
-	}
-	if (a.prefix && !b.prefix) return -1;
-	if (!a.prefix && b.prefix) return 1;
-	if (a.suffix && !b.suffix) return -1;
-	if (!a.suffix && b.suffix) return 1;
-	if (a.caseSensitive && !b.caseSensitive) return -1;
-	if (!a.caseSensitive && b.caseSensitive) return 1;
-	return 0;
-}
-function createSegmentNode(parent, kind = 0, caseSensitive, prefix, suffix) {
-	return {
-		kind,
-		depth: parent ? parent.depth + 1 : 0,
-		pathless: null,
-		index: null,
-		static: null,
-		staticInsensitive: null,
-		dynamic: null,
-		optional: null,
-		wildcard: null,
-		route: null,
-		data: void 0,
-		parent,
-		parse: null,
-		priority: 0,
-		caseSensitive,
-		prefix,
-		suffix
-	};
-}
-function processRouteMasks(routeList, processedTree) {
-	const segmentTree = createSegmentNode();
-	const dynamicListsToSort = [];
-	function visit(route, start, parentNode, parentInterpolation) {
-		const [node, cursor, segments] = parseSegments(false, route, start, parentNode, dynamicListsToSort, parentInterpolation);
-		if (route.children) for (const child of route.children) visit(child, cursor, node, segments);
-	}
-	for (const route of routeList) visit(route, 1, segmentTree);
-	for (const nodes of dynamicListsToSort) nodes.sort(sortDynamic);
-	processedTree.masksTree = segmentTree;
-	processedTree.flatCache = createSieveCache(1e3);
-}
-/**
-* Take an arbitrary list of routes, create a tree from them (if it hasn't been created already), and match a path against it.
-*/
-function findFlatMatch(path, processedTree) {
-	path ||= "/";
-	const cached = processedTree.flatCache.get(path);
-	if (cached !== void 0) return cached;
-	const result = findMatch(path, processedTree.masksTree);
-	processedTree.flatCache.set(path, result);
-	return result;
-}
-/**
-* @deprecated keep until v2 so that `router.matchRoute` can keep not caring about the actual route tree
-*/
-function findSingleMatch(from, caseSensitive, fuzzy, path, processedTree) {
-	from ||= "/";
-	path ||= "/";
-	const key = caseSensitive ? `case\0${from}` : from;
-	let tree = processedTree.singleCache.get(key);
-	if (!tree) {
-		tree = createSegmentNode();
-		parseSegments(caseSensitive, { from }, 1, tree);
-		processedTree.singleCache.set(key, tree);
-	}
-	return findMatch(path, tree, fuzzy);
-}
-function findRouteMatch(path, processedTree, fuzzy = false) {
-	const key = fuzzy ? path : `nofuzz\0${path}`;
-	const cached = processedTree.matchCache.get(key);
-	if (cached !== void 0) return cached;
-	path ||= "/";
-	let result;
-	try {
-		result = findMatch(path, processedTree.segmentTree, fuzzy);
-	} catch (err) {
-		if (err instanceof URIError) result = null;
-		else throw err;
-	}
-	if (result) result.branch = buildRouteBranch(result.route);
-	processedTree.matchCache.set(key, result);
-	return result;
-}
-/**
-* Processes a route tree into a segment trie for efficient path matching.
-* Also builds lookup maps for routes by ID and by trimmed full path.
-*/
-function processRouteTree(routeTree, caseSensitive = false) {
-	const segmentTree = createSegmentNode();
-	const dynamicListsToSort = [];
-	const routesById = {};
-	const routesByPath = {};
-	let index = 0;
-	function visit(route, start, parentNode, parentInterpolation) {
-		route.init(index);
-		if (route.id in routesById) invariant();
-		routesById[route.id] = route;
-		if (index !== 0 && route.path) {
-			const trimmedFullPath = trimPathRight(route.fullPath);
-			if (!routesByPath[trimmedFullPath] || route.fullPath.endsWith("/")) routesByPath[trimmedFullPath] = route;
-		}
-		index++;
-		const [node, cursor, segments] = parseSegments(caseSensitive, route, start, parentNode, dynamicListsToSort, parentInterpolation);
-		route._interpolation = segments;
-		if (route.children) for (const child of route.children) visit(child, cursor, node, segments);
-	}
-	visit(routeTree, 1, segmentTree);
-	for (const nodes of dynamicListsToSort) nodes.sort(sortDynamic);
-	return {
-		processedTree: {
-			segmentTree,
-			singleCache: createSieveCache(1e3),
-			matchCache: createSieveCache(1e3),
-			flatCache: null,
-			masksTree: null
-		},
-		routesById,
-		routesByPath
-	};
-}
-function findMatch(path, segmentTree, fuzzy = false) {
-	const parts = path.split("/");
-	const leaf = getNodeMatch(path, parts, segmentTree, fuzzy);
-	if (!leaf) return null;
-	const [rawParams] = extractParams(path, parts, leaf);
-	return {
-		route: leaf.node.route,
-		rawParams
-	};
-}
-/**
-* This function is "resumable":
-* - the `leaf` input can contain `extract` and `rawParams` properties from a previous `extractParams` call
-* - the returned `state` can be passed back as `extract` in a future call to continue extracting params from where we left off
-*
-* Inputs are *not* mutated.
-*/
-function extractParams(path, parts, leaf) {
-	const list = buildBranch(leaf.node);
-	const names = leaf.node.data && getParamNames(leaf.node.data);
-	const rawParams = Object.create(null);
-	/** which segment of the path we're currently processing */
-	let partIndex = leaf.extract?.part ?? 0;
-	/** which node of the route tree branch we're currently processing */
-	let nodeIndex = leaf.extract?.node ?? 0;
-	/** index of the 1st character of the segment we're processing in the path string */
-	let pathIndex = leaf.extract?.path ?? 0;
-	/** Next original parameter name, independent of pathless/static nodes. */
-	let paramIndex = leaf.extract?.param ?? 0;
-	for (; nodeIndex < list.length; partIndex++, nodeIndex++, pathIndex++) {
-		const node = list[nodeIndex];
-		if (node.kind === SEGMENT_TYPE_INDEX) break;
-		if (node.kind === SEGMENT_TYPE_PATHLESS) {
-			partIndex--;
-			pathIndex--;
-			continue;
-		}
-		const part = parts[partIndex];
-		const currentPathIndex = pathIndex;
-		if (part) pathIndex += part.length;
-		if (node.kind === 1 || node.kind === 3) {
-			const name = names[paramIndex++];
-			if (node.kind === 3 && leaf.skipped & 1 << nodeIndex) {
-				partIndex--;
-				pathIndex = currentPathIndex - 1;
-				continue;
-			}
-			const value = node.suffix || node.prefix ? part.substring(node.prefix.length, part.length - node.suffix.length) : part;
-			if (value || node.kind === 1) rawParams[name] = decodeURIComponent(value);
-		} else if (node.kind === 2) {
-			const n = node;
-			const value = path.substring(currentPathIndex + n.prefix.length, path.length - n.suffix.length);
-			const splat = decodeURIComponent(value);
-			rawParams["*"] = splat;
-			rawParams._splat = splat;
-			break;
-		}
-	}
-	if (leaf.rawParams) Object.assign(rawParams, leaf.rawParams);
-	return [rawParams, {
-		part: partIndex,
-		node: nodeIndex,
-		path: pathIndex,
-		param: paramIndex
-	}];
-}
-function buildRouteBranch(route) {
-	const list = [route];
-	while (route.parentRoute) {
-		route = route.parentRoute;
-		list.push(route);
-	}
-	list.reverse();
-	return list;
-}
-function buildBranch(node) {
-	const list = Array(node.depth + 1);
-	do {
-		list[node.depth] = node;
-		node = node.parent;
-	} while (node);
-	return list;
-}
-function getNodeMatch(path, parts, segmentTree, fuzzy) {
-	if (path === "/" && segmentTree.index) return {
-		node: segmentTree.index,
-		skipped: 0
-	};
-	const trailingSlash = !last(parts);
-	const pathIsIndex = trailingSlash && path !== "/";
-	const partsLength = parts.length - (trailingSlash ? 1 : 0);
-	const stack = [{
-		node: segmentTree,
-		index: 1,
-		skipped: 0,
-		statics: 0,
-		dynamics: 0,
-		optionals: 0
-	}];
-	let bestFuzzy = null;
-	let bestMatch = null;
-	while (stack.length) {
-		const frame = stack.pop();
-		const { node, index, skipped, statics, dynamics, optionals } = frame;
-		let { extract, rawParams } = frame;
-		if (node.kind === 2 && node.route && !isFrameMoreSpecific(bestMatch, frame)) continue;
-		if (node.parse) {
-			if (!validateParseParams(path, parts, frame)) continue;
-			rawParams = frame.rawParams;
-			extract = frame.extract;
-		}
-		if (fuzzy && node.route && node.kind !== SEGMENT_TYPE_INDEX && isFrameMoreSpecific(bestFuzzy, frame)) bestFuzzy = frame;
-		const isBeyondPath = index === partsLength;
-		if (isBeyondPath) {
-			if (node.route && (!pathIsIndex || node.kind === SEGMENT_TYPE_INDEX || node.kind === 2) && isFrameMoreSpecific(bestMatch, frame)) bestMatch = frame;
-			if (!node.optional && !node.wildcard && !node.index && !node.pathless) continue;
-		}
-		const part = isBeyondPath ? void 0 : parts[index];
-		let lowerPart;
-		if (isBeyondPath && node.index) {
-			const indexFrame = {
-				node: node.index,
-				index,
-				skipped,
-				statics,
-				dynamics,
-				optionals,
-				extract,
-				rawParams
-			};
-			let indexValid = true;
-			if (node.index.parse) {
-				if (!validateParseParams(path, parts, indexFrame)) indexValid = false;
-			}
-			if (indexValid) {
-				if (!dynamics && !optionals && !skipped && isPerfectStaticMatch(statics, partsLength)) return indexFrame;
-				if (isFrameMoreSpecific(bestMatch, indexFrame)) bestMatch = indexFrame;
-			}
-		}
-		if (node.wildcard) for (let i = node.wildcard.length - 1; i >= 0; i--) {
-			const segment = node.wildcard[i];
-			const { prefix, suffix } = segment;
-			if (prefix) {
-				if (isBeyondPath) continue;
-				if (!(segment.caseSensitive ? part : lowerPart ??= part.toLowerCase()).startsWith(prefix)) continue;
-			}
-			if (suffix) {
-				if (isBeyondPath) continue;
-				const end = parts.slice(index).join("/");
-				const suffixPart = end.slice(-suffix.length);
-				if ((segment.caseSensitive ? suffixPart : suffixPart.toLowerCase()) !== suffix || end.length - suffix.length < prefix.length) continue;
-			}
-			stack.push({
-				node: segment,
-				index: partsLength,
-				skipped,
-				statics,
-				dynamics,
-				optionals,
-				extract,
-				rawParams
-			});
-		}
-		if (node.optional) {
-			const nextSkipped = skipped | 1 << node.depth + 1;
-			for (let i = node.optional.length - 1; i >= 0; i--) {
-				const segment = node.optional[i];
-				stack.push({
-					node: segment,
-					index,
-					skipped: nextSkipped,
-					statics,
-					dynamics,
-					optionals,
-					extract,
-					rawParams
-				});
-			}
-			if (!isBeyondPath) for (let i = node.optional.length - 1; i >= 0; i--) {
-				const segment = node.optional[i];
-				const { prefix, suffix } = segment;
-				if (prefix || suffix) {
-					const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
-					if (prefix && !casePart.startsWith(prefix)) continue;
-					if (suffix && casePart.indexOf(suffix, casePart.length - suffix.length) < prefix.length) continue;
-				}
-				stack.push({
-					node: segment,
-					index: index + 1,
-					skipped,
-					statics,
-					dynamics,
-					optionals: optionals + segmentScore(partsLength, index),
-					extract,
-					rawParams
-				});
-			}
-		}
-		if (!isBeyondPath && node.dynamic && part) for (let i = node.dynamic.length - 1; i >= 0; i--) {
-			const segment = node.dynamic[i];
-			const { prefix, suffix } = segment;
-			if (prefix || suffix) {
-				const casePart = segment.caseSensitive ? part : lowerPart ??= part.toLowerCase();
-				if (prefix && !casePart.startsWith(prefix)) continue;
-				if (suffix && casePart.indexOf(suffix, casePart.length - suffix.length) < prefix.length) continue;
-			}
-			stack.push({
-				node: segment,
-				index: index + 1,
-				skipped,
-				statics,
-				dynamics: dynamics + segmentScore(partsLength, index),
-				optionals,
-				extract,
-				rawParams
-			});
-		}
-		if (!isBeyondPath && node.staticInsensitive) {
-			const match = node.staticInsensitive.get(lowerPart ??= part.toLowerCase());
-			if (match) stack.push({
-				node: match,
-				index: index + 1,
-				skipped,
-				statics: statics + segmentScore(partsLength, index),
-				dynamics,
-				optionals,
-				extract,
-				rawParams
-			});
-		}
-		if (!isBeyondPath && node.static) {
-			const match = node.static.get(part);
-			if (match) stack.push({
-				node: match,
-				index: index + 1,
-				skipped,
-				statics: statics + segmentScore(partsLength, index),
-				dynamics,
-				optionals,
-				extract,
-				rawParams
-			});
-		}
-		if (node.pathless) for (let i = node.pathless.length - 1; i >= 0; i--) {
-			const segment = node.pathless[i];
-			stack.push({
-				node: segment,
-				index,
-				skipped,
-				statics,
-				dynamics,
-				optionals,
-				extract,
-				rawParams
-			});
-		}
-	}
-	if (bestMatch) return bestMatch;
-	if (fuzzy && bestFuzzy) {
-		let sliceIndex = bestFuzzy.index;
-		for (let i = 0; i < bestFuzzy.index; i++) sliceIndex += parts[i].length;
-		const splat = sliceIndex === path.length ? "/" : path.slice(sliceIndex);
-		bestFuzzy.rawParams ??= Object.create(null);
-		bestFuzzy.rawParams["**"] = decodeURIComponent(splat);
-		return bestFuzzy;
-	}
-	return null;
-}
-function segmentScore(partsLength, index) {
-	return 2 ** (partsLength - index - 1);
-}
-function isPerfectStaticMatch(statics, partsLength) {
-	return statics === 2 ** (partsLength - 1) - 1;
-}
-function validateParseParams(path, parts, frame) {
-	let rawParams;
-	let state;
-	try {
-		[rawParams, state] = extractParams(path, parts, frame);
-	} catch {
-		return null;
-	}
-	frame.rawParams = rawParams;
-	frame.extract = state;
-	if (!frame.node.parse) return true;
-	try {
-		if (frame.node.parse(rawParams) === false) return null;
-	} catch {}
-	return true;
-}
-function isFrameMoreSpecific(prev, next) {
-	if (!prev) return true;
-	return next.statics > prev.statics || next.statics === prev.statics && (next.dynamics > prev.dynamics || next.dynamics === prev.dynamics && (next.optionals > prev.optionals || next.optionals === prev.optionals && ((next.node.kind === SEGMENT_TYPE_INDEX) > (prev.node.kind === SEGMENT_TYPE_INDEX) || next.node.kind === SEGMENT_TYPE_INDEX === (prev.node.kind === SEGMENT_TYPE_INDEX) && next.node.depth > prev.node.depth)));
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/scroll-restoration.js
-function getSafeSessionStorage() {
-	try {
-		return sessionStorage;
-	} catch {
-		return;
-	}
-}
-var storageKey = "tsr-scroll-restoration-v1_3";
-getSafeSessionStorage();
-/**
-* The default `getKey` function for `useScrollRestoration`.
-* It returns the `key` from the location state or the `href` of the location.
-*
-* The `location.href` is used as a fallback to support the use case where the location state is not available like the initial render.
-*/
-var defaultGetScrollRestorationKey = (location) => {
-	return location.state.__TSR_key || location.href;
-};
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/qss.js
-/**
-* Program is a reimplementation of the `qss` package:
-* Copyright (c) Luke Edwards luke.edwards05@gmail.com, MIT License
-* https://github.com/lukeed/qss/blob/master/license.md
-*
-* This reimplementation uses modern browser APIs
-* (namely URLSearchParams) and TypeScript while still
-* maintaining the original functionality and interface.
-*
-* Update: this implementation has also been mangled to
-* fit exactly our use-case (single value per key in encoding).
-*/
-/**
-* Encodes an object into a query string.
-* @param obj - The object to encode into a query string.
-* @param stringify - An optional custom stringify function.
-* @returns The encoded query string.
-* @example
-* ```
-* // Example input: encode({ token: 'foo', key: 'value' })
-* // Expected output: "token=foo&key=value"
-* ```
-*/
-function encode(obj, stringify = String) {
-	let result;
-	for (const key in obj) {
-		const val = obj[key];
-		if (val !== void 0) (result ||= new URLSearchParams()).set(key, stringify(val));
-	}
-	return result ? result.toString() : "";
-}
-/**
-* Converts a string value to its appropriate type (string, number, boolean).
-* @param mix - The string value to convert.
-* @returns The converted value.
-* @example
-* // Example input: toValue("123")
-* // Expected output: 123
-*/
-function toValue(str) {
-	if (!str) return "";
-	if (str === "false") return false;
-	if (str === "true") return true;
-	return +str * 0 === 0 && +str + "" === str ? +str : str;
-}
-/**
-* Decodes a query string into an object.
-* @param str - The query string to decode.
-* @returns The decoded key-value pairs in an object format.
-* @example
-* // Example input: decode("token=foo&key=value")
-* // Expected output: { "token": "foo", "key": "value" }
-*/
-function decode(str) {
-	const searchParams = new URLSearchParams(str);
-	const result = Object.create(null);
-	for (const [key, value] of searchParams.entries()) {
-		const previousValue = result[key];
-		if (previousValue == null) result[key] = toValue(value);
-		else if (Array.isArray(previousValue)) previousValue.push(toValue(value));
-		else result[key] = [previousValue, toValue(value)];
-	}
-	return result;
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/searchParams.js
-var jsonStart = /^(?:\s|["[{\d-]|fa|nu|tr)/;
-/** Default `parseSearch` that strips leading '?' and JSON-parses values. */
-var defaultParseSearch = parseSearchWith(JSON.parse);
-/** Default `stringifySearch` using JSON.stringify for complex values. */
-var defaultStringifySearch = stringifySearchWith(JSON.stringify, JSON.parse);
-/**
-* Build a `parseSearch` function using a provided JSON-like parser.
-*
-* The returned function strips a leading `?`, decodes values, and attempts to
-* JSON-parse string values using the given `parser`.
-*
-* @param parser Function to parse a string value (e.g. `JSON.parse`).
-* @returns A `parseSearch` function compatible with `Router` options.
-* @link https://tanstack.com/router/latest/docs/framework/react/guide/custom-search-param-serialization
-*/
-function parseSearchWith(parser) {
-	const isJsonParser = parser === JSON.parse;
-	return (searchStr) => {
-		if (searchStr[0] === "?") searchStr = searchStr.substring(1);
-		const query = decode(searchStr);
-		for (const key in query) {
-			const value = query[key];
-			if (typeof value === "string") {
-				if (isJsonParser && !jsonStart.test(value)) continue;
-				try {
-					query[key] = parser(value);
-				} catch (_err) {}
-			}
-		}
-		return query;
-	};
-}
-/**
-* Build a `stringifySearch` function using a provided serializer.
-*
-* Non-primitive values are serialized with `stringify`. If a `parser` is
-* supplied, string values that are parseable are re-serialized to ensure
-* symmetry with `parseSearch`.
-*
-* @param stringify Function to serialize a value (e.g. `JSON.stringify`).
-* @param parser Optional parser to detect parseable strings.
-* @returns A `stringifySearch` function compatible with `Router` options.
-* @link https://tanstack.com/router/latest/docs/framework/react/guide/custom-search-param-serialization
-*/
-function stringifySearchWith(stringify, parser) {
-	const isJsonParser = parser === JSON.parse;
-	function stringifyValue(val) {
-		if (val && typeof val === "object") try {
-			return stringify(val);
-		} catch (_err) {}
-		else if (parser && typeof val === "string") {
-			if (isJsonParser && !jsonStart.test(val)) return val;
-			try {
-				parser(val);
-				return stringify(val);
-			} catch (_err) {}
-		}
-		return val;
-	}
-	return (search) => {
-		const searchStr = encode(search, stringifyValue);
-		return searchStr ? `?${searchStr}` : "";
-	};
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/rewrite.js
-/** Create a rewrite pair that strips/adds a basepath on input/output. */
-function rewriteBasepath(basepath, caseSensitive, rewrite) {
-	const trimmedBasepath = trimPath(basepath);
-	const normalizedBasepath = `/${trimmedBasepath}`;
-	const checkBasepath = caseSensitive ? normalizedBasepath : normalizedBasepath.toLowerCase();
-	const checkBasepathWithSlash = `${checkBasepath}/`;
-	const basepathRewrite = {
-		input: ({ url }) => {
-			const pathname = caseSensitive ? url.pathname : url.pathname.toLowerCase();
-			if (pathname === checkBasepath) url.pathname = "/";
-			else if (pathname.startsWith(checkBasepathWithSlash)) url.pathname = url.pathname.slice(normalizedBasepath.length);
-			return url;
-		},
-		output: ({ url }) => {
-			url.pathname = cleanPath(`/${trimmedBasepath}${url.pathname}`);
-			return url;
-		}
-	};
-	return rewrite ? {
-		input: ({ url }) => executeRewriteInput(rewrite, basepathRewrite.input({ url })),
-		output: ({ url }) => basepathRewrite.output({ url: executeRewriteOutput(rewrite, url) })
-	} : basepathRewrite;
-}
-/** Execute a location input rewrite if provided. */
-function executeRewriteInput(rewrite, url) {
-	const res = rewrite?.input?.({ url });
-	if (res) {
-		if (typeof res === "string") return new URL(res);
-		else if (res instanceof URL) return res;
-	}
-	return url;
-}
-/** Execute a location output rewrite if provided. */
-function executeRewriteOutput(rewrite, url) {
-	const res = rewrite?.output?.({ url });
-	if (res) {
-		if (typeof res === "string") return new URL(res);
-		else if (res instanceof URL) return res;
-	}
-	return url;
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/stores.js
-/** SSR non-reactive createMutableStore */
-function createNonReactiveMutableStore(initialValue) {
-	let value = initialValue;
-	return {
-		get() {
-			return value;
-		},
-		set(nextOrUpdater) {
-			value = functionalUpdate(nextOrUpdater, value);
-		}
-	};
-}
-/** SSR non-reactive createReadonlyStore */
-function createNonReactiveReadonlyStore(read) {
-	return { get() {
-		return read();
-	} };
-}
-function createRouterStores(initialLocation, config) {
-	const { createMutableStore, createReadonlyStore, batch } = config;
-	const byRoute = /* @__PURE__ */ new Map();
-	const status = createMutableStore("idle");
-	const location = createMutableStore(initialLocation);
-	const resolvedLocation = createMutableStore(void 0);
-	const ids = createMutableStore([]);
-	const matches = createReadonlyStore(() => ids.get().map((id) => byRoute.get(id).get()));
-	const __store = createReadonlyStore(() => ({
-		status: status.get(),
-		isLoading: status.get() === "pending",
-		matches: matches.get(),
-		location: location.get(),
-		resolvedLocation: resolvedLocation.get()
-	}));
-	function getMatchStore(routeId) {
-		let matchStore = byRoute.get(routeId);
-		if (!matchStore) {
-			matchStore = createMutableStore(void 0);
-			byRoute.set(routeId, matchStore);
-		}
-		return matchStore;
-	}
-	const store = {
-		status,
-		location,
-		resolvedLocation,
-		ids,
-		matches,
-		byRoute,
-		__store,
-		getMatchStore,
-		setMatches
-	};
-	function setMatches(nextMatches) {
-		const previousIds = ids.get();
-		const nextIds = nextMatches.map((match) => match.routeId);
-		batch(() => {
-			if (!arraysEqual(previousIds, nextIds)) ids.set(nextIds);
-			for (const id of previousIds) if (!nextIds.includes(id)) byRoute.get(id).set(() => void 0);
-			for (const nextMatch of nextMatches) {
-				const matchStore = getMatchStore(nextMatch.routeId);
-				if (matchStore.get() !== nextMatch) matchStore.set(nextMatch);
-			}
-		});
-	}
-	return store;
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/router.js
-function isExternalUrl(url, origin) {
-	return url.protocol !== "http:" && url.protocol !== "https:" || url.origin !== origin || !!url.username || !!url.password;
-}
-function getUrlPath(url) {
-	return url.pathname + url.search + url.hash;
-}
-function routeNeedsLoad(route) {
-	return route.options.loader || route.options.beforeLoad || route.lazyFn || route.options.component?.preload || route.options.pendingComponent?.preload;
-}
-/**
-* Compute whether path, href or hash changed between previous and current
-* resolved locations.
-*/
-function getLocationChangeInfo(location, resolvedLocation) {
-	return {
-		fromLocation: resolvedLocation,
-		toLocation: location,
-		pathChanged: resolvedLocation?.pathname !== location.pathname,
-		hrefChanged: resolvedLocation?.href !== location.href,
-		hashChanged: resolvedLocation?.hash !== location.hash
-	};
-}
-function lifecycleEnd(matches) {
-	return matches.findIndex((match) => match.status === "error" || match.status === "notFound" || match._notFound) + 1;
-}
-/** Run route lifecycle callbacks in leave/enter/stay phases. */
-function runRouteLifecycle(router, previous, matches, previousEnd, nextEnd, owner) {
-	if (previousEnd) previous = previous.slice(0, previousEnd);
-	if (nextEnd) matches = matches.slice(0, nextEnd);
-	for (const match of previous) {
-		if (owner && router._tx !== owner) return;
-		if (!matches.some((candidate) => candidate.routeId === match.routeId)) router.routesById[match.routeId].options.onLeave?.(match);
-	}
-	for (const match of matches) {
-		if (owner && router._tx !== owner) return;
-		router.routesById[match.routeId].options[previous.some((candidate) => candidate.routeId === match.routeId) ? "onStay" : "onEnter"]?.(match);
-	}
-}
-/**
-* Core, framework-agnostic router engine that powers TanStack Router.
-*
-* Provides navigation, matching, loading, preloading, caching and event APIs
-* used by framework adapters (React/Solid). Prefer framework helpers like
-* `createRouter` in app code.
-*
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/RouterType
-*/
-var RouterCore = class {
-	/**
-	* @deprecated Use the `createRouter` function instead
-	*/
-	constructor(options, getStoreConfig) {
-		this.tempLocationKey = `${Math.round(Math.random() * 1e7)}`;
-		this._scroll = { n: true };
-		this.subscribers = /* @__PURE__ */ new Set();
-		this._cache = /* @__PURE__ */ new Map();
-		this._committed = [];
-		this.startTransition = async (fn) => {
-			fn();
-			return false;
-		};
-		this.update = (newOptions) => {
-			const prevOptions = this.options;
-			this.options = {
-				...prevOptions,
-				...newOptions
-			};
-			this.isServer = this.options.isServer ?? true ?? typeof document === "undefined";
-			this.protocolAllowlist = new Set(this.options.protocolAllowlist);
-			if (!this.history || this.options.history && this.options.history !== this.history) if (!this.options.history) {} else this.history = this.options.history;
-			this.origin = this.options.origin;
-			if (!this.origin) this.origin = "http://localhost";
-			const nextBasepath = this.options.basepath ?? "/";
-			const nextRewriteOption = this.options.rewrite;
-			const rewriteChanged = this.basepath !== nextBasepath || prevOptions?.rewrite !== nextRewriteOption || prevOptions?.caseSensitive !== this.options.caseSensitive;
-			if (rewriteChanged) {
-				this.basepath = nextBasepath;
-				this.rewrite = nextBasepath !== "/" && trimPath(nextBasepath) ? rewriteBasepath(nextBasepath, this.options.caseSensitive, nextRewriteOption) : nextRewriteOption;
-			}
-			if (this.history) this.updateLatestLocation();
-			if (this.options.routeTree !== this.routeTree || prevOptions?.caseSensitive !== this.options.caseSensitive) {
-				this.routeTree = this.options.routeTree;
-				let processRouteTreeResult;
-				if (globalThis.__TSR_CACHE__ && globalThis.__TSR_CACHE__.routeTree === this.routeTree && globalThis.__TSR_CACHE__.caseSensitive === this.options.caseSensitive) processRouteTreeResult = globalThis.__TSR_CACHE__.processRouteTreeResult;
-				else {
-					processRouteTreeResult = this.buildRouteTree();
-					if (globalThis.__TSR_CACHE__ === void 0) globalThis.__TSR_CACHE__ = {
-						routeTree: this.routeTree,
-						caseSensitive: this.options.caseSensitive,
-						processRouteTreeResult
-					};
-				}
-				this.setRoutes(processRouteTreeResult);
-			}
-			if (!this.stores) {
-				if (this.latestLocation) {
-					const config = this.getStoreConfig(this);
-					this.batch = config.batch;
-					this.stores = createRouterStores(this.latestLocation, config);
-				}
-			} else if (rewriteChanged) this.stores.location.set(this.latestLocation);
-		};
-		this.updateLatestLocation = () => {
-			this.latestLocation = this.parseLocation(this.history.location, this.latestLocation);
-		};
-		this.buildRouteTree = () => {
-			const result = processRouteTree(this.routeTree, this.options.caseSensitive);
-			if (this.options.routeMasks) processRouteMasks(this.options.routeMasks, result.processedTree);
-			return {
-				...result,
-				resolvePathCache: createSieveCache(1e3)
-			};
-		};
-		this.subscribe = (eventType, fn) => {
-			const listener = {
-				eventType,
-				fn
-			};
-			this.subscribers.add(listener);
-			return () => {
-				this.subscribers.delete(listener);
-			};
-		};
-		this.emit = (routerEvent) => {
-			for (const listener of this.subscribers) if (listener.eventType === routerEvent.type) try {
-				listener.fn(routerEvent);
-			} catch (e) {
-				console.error(e);
-			}
-		};
-		this.parseLocation = (locationToParse, previousLocation) => {
-			const parse = ({ pathname, search, hash, href }, state) => {
-				if (!this.rewrite && !/[ \x00-\x1f\x7f\u0080-\uffff]/.test(pathname)) {
-					const parsedSearch = this.options.parseSearch(search);
-					const searchStr = this.options.stringifySearch(parsedSearch);
-					return {
-						href: pathname + searchStr + hash,
-						publicHref: pathname + searchStr + hash,
-						pathname: decodePath(pathname),
-						external: false,
-						searchStr,
-						search: nullReplaceEqualDeep(previousLocation?.search, parsedSearch),
-						hash: decodePath(hash.slice(1)),
-						state: replaceEqualDeep(previousLocation?.state, state)
-					};
-				}
-				const url = executeRewriteInput(this.rewrite, new URL(href, this.origin));
-				const parsedSearch = this.options.parseSearch(url.search);
-				const searchStr = this.options.stringifySearch(parsedSearch);
-				url.search = searchStr;
-				return {
-					href: url.href.replace(url.origin, ""),
-					publicHref: href,
-					pathname: decodePath(normalizeProtocolRelative(url.pathname)),
-					external: !!this.rewrite && isExternalUrl(url, this.origin),
-					searchStr,
-					search: nullReplaceEqualDeep(previousLocation?.search, parsedSearch),
-					hash: decodePath(url.hash.slice(1)),
-					state: replaceEqualDeep(previousLocation?.state, state)
-				};
-			};
-			const location = parse(locationToParse, locationToParse.state);
-			const { __tempLocation, __tempKey } = location.state;
-			if (__tempLocation && (!__tempKey || __tempKey === this.tempLocationKey)) {
-				const parsedTempLocation = parse(__tempLocation, {
-					...__tempLocation.state,
-					__tempLocation: void 0,
-					key: location.state.key,
-					__TSR_key: location.state.__TSR_key
-				});
-				parsedTempLocation.maskedLocation = location;
-				return parsedTempLocation;
-			}
-			return location;
-		};
-		this.matchRoutes = (pathnameOrNext, locationSearchOrOpts, opts) => {
-			if (typeof pathnameOrNext === "string") return this.matchRoutesInternal({
-				pathname: pathnameOrNext,
-				search: locationSearchOrOpts
-			}, opts);
-			return this.matchRoutesInternal(pathnameOrNext, locationSearchOrOpts);
-		};
-		this.getMatchedRoutes = (pathname) => {
-			const rawParams = Object.create(null);
-			const match = findRouteMatch(trimPathRight(pathname), this.processedTree, true);
-			if (match) Object.assign(rawParams, match.rawParams);
-			return [
-				match?.branch || [this.routesById["__root__"]],
-				rawParams,
-				match?.route
-			];
-		};
-		this.buildLocation = (opts) => {
-			const build = (dest = {}) => {
-				if (dest.href) {
-					const parsed = parseHref(dest.href, {});
-					dest = {
-						...dest,
-						to: executeRewriteInput(this.rewrite, new URL(parsed.pathname, this.origin)).pathname,
-						search: this.options.parseSearch(parsed.search),
-						hash: parsed.hash.slice(1)
-					};
-				}
-				const currentLocation = dest._fromLocation || this._pendingLocation || this.latestLocation;
-				let lightweight;
-				const current = () => {
-					return currentLocation;
-				};
-				const currentMatch = () => {
-					return lightweight ??= this.matchRoutesLightweight(currentLocation);
-				};
-				const to = dest.to ? `${dest.to}` : ".";
-				const nextTo = resolvePath(to[0] === "/" ? "" : dest.unsafeRelative === "path" ? current().pathname : dest.from ?? currentMatch()[1], to, this.options.trailingSlash, this.resolvePathCache);
-				const destRoute = this.routesByPath[trimPathRight(nextTo)];
-				const isTemplate = nextTo.includes("$");
-				let destRoutes;
-				if (destRoute) destRoutes = destRoute._branch ??= buildRouteBranch(destRoute);
-				else if (isTemplate) destRoutes = [];
-				else {
-					const [matchedRoutes, rawParams, foundRoute] = this.getMatchedRoutes(nextTo);
-					destRoutes = matchedRoutes;
-					if (this.options.notFoundRoute && (!foundRoute || foundRoute.path !== "/" && rawParams["**"])) destRoutes = [...destRoutes, this.options.notFoundRoute];
-				}
-				const interpolation = isTemplate ? destRoute?._interpolation ?? parseSegments(false, { fullPath: nextTo }, 0) : void 0;
-				let nextParams;
-				for (const route of destRoutes) {
-					const fn = route.options.params?.stringify ?? route.options.stringifyParams;
-					if (fn) {
-						const fromParams = currentMatch()[3];
-						nextParams ??= resolveNextParams(dest.params, fromParams);
-						if (!hasKeys(nextParams)) break;
-						if (nextParams === fromParams) nextParams = Object.assign(createNull(), nextParams);
-						try {
-							Object.assign(nextParams, fn(nextParams));
-						} catch {}
-					}
-				}
-				nextParams ??= resolveNextParams(dest.params, needsInheritedParams(dest.params, interpolation) ? currentMatch()[3] : EMPTY_RECORD);
-				const nextPathname = opts.leaveParams ? nextTo : normalizeProtocolRelative(decodePath(interpolation ? interpolatePath(nextTo, interpolation, nextParams, this.pathParamsDecoder) : nextTo));
-				const middlewares = getSearchMiddlewares(destRoutes, opts._includeValidateSearch);
-				const fromSearch = () => {
-					let search = currentMatch()[2];
-					if (opts._includeValidateSearch && this.options.search?.strict) {
-						const validatedSearch = {};
-						destRoutes.forEach((route) => {
-							if (route.options.validateSearch) try {
-								Object.assign(validatedSearch, validateSearch(route.options.validateSearch, {
-									...validatedSearch,
-									...search
-								}));
-							} catch {}
-						});
-						search = validatedSearch;
-					}
-					return search;
-				};
-				const nextSearch = middlewares.length ? applySearchMiddleware(middlewares, fromSearch(), dest) : dest.search === true ? fromSearch() : typeof dest.search === "function" ? dest.search(fromSearch()) : dest.search || EMPTY_RECORD;
-				const searchStr = this.options.stringifySearch(nextSearch);
-				const hash = dest.hash === true ? current().hash : typeof dest.hash === "function" ? dest.hash(current().hash) : dest.hash || void 0;
-				const hashStr = hash ? `#${hash}` : "";
-				const nextState = !dest.state ? EMPTY_RECORD : dest.state === true ? current().state : typeof dest.state === "function" ? dest.state(current().state) : dest.state;
-				const fullPath = `${nextPathname}${searchStr}${hashStr}`;
-				let href;
-				let publicHref;
-				let external = false;
-				if (this.rewrite) {
-					const url = new URL(fullPath, this.origin);
-					const origin = url.origin;
-					const rewrittenUrl = executeRewriteOutput(this.rewrite, url);
-					href = getUrlPath(url);
-					if (isExternalUrl(rewrittenUrl, origin)) {
-						publicHref = rewrittenUrl.href;
-						external = true;
-					} else publicHref = normalizeProtocolRelative(getUrlPath(rewrittenUrl));
-				} else {
-					href = encodePathLikeUrl(fullPath);
-					publicHref = href;
-				}
-				return {
-					publicHref,
-					href,
-					pathname: nextPathname,
-					search: nextSearch,
-					searchStr,
-					state: nextState,
-					hash: hash ?? "",
-					external,
-					unmaskOnReload: dest.unmaskOnReload
-				};
-			};
-			const next = build(opts);
-			if (opts.mask) next.maskedLocation = build({
-				from: opts.from,
-				...opts.mask
-			});
-			else if (this.options.routeMasks) {
-				const match = findFlatMatch(next.pathname, this.processedTree);
-				if (match) {
-					const params = Object.assign(createNull(), match.rawParams);
-					const { from: _from, params: maskParams, ...maskProps } = match.route;
-					const nextParams = resolveNextParams(maskParams, params);
-					next.maskedLocation = build({
-						from: opts.from,
-						...maskProps,
-						params: nextParams
-					});
-				}
-			}
-			return next;
-		};
-		this.commitLocation = async ({ viewTransition, ignoreBlocker, ...next }) => {};
-		this.buildAndCommitLocation = ({ replace, resetScroll, hashScrollIntoView, viewTransition, ignoreBlocker, ...rest } = {}) => {
-			return Promise.resolve();
-		};
-		this.navigate = async ({ to, reloadDocument, href, publicHref, ...rest }) => {};
-		this.load = async (opts) => {
-			return loadServerRoute(this, opts);
-		};
-		this.startViewTransition = (fn) => {
-			this.shouldViewTransition ?? this.options.defaultViewTransition;
-			this.shouldViewTransition = void 0;
-			return fn();
-		};
-		this.invalidate = (opts) => {
-			const committedMatches = this._committed;
-			const filter = opts?.filter;
-			const preloads = this._preloads;
-			const invalidIds = /* @__PURE__ */ new Set();
-			const consider = (match) => {
-				if (!filter || filter(match)) invalidIds.add(match.id);
-			};
-			committedMatches.forEach(consider);
-			this._cache.forEach(consider);
-			preloads?.forEach((matches) => matches.forEach(consider));
-			this._tx?.[3].forEach(consider);
-			const abort = [];
-			for (const [controller, matches] of preloads ?? []) if (matches.some((match) => invalidIds.has(match.id))) {
-				preloads.delete(controller);
-				abort.push(controller);
-			}
-			const invalidate = (d) => {
-				if (invalidIds.has(d.id)) {
-					const route = this.routesById[d.routeId];
-					const next = {
-						...d,
-						invalid: true,
-						...(opts?.forcePending || d.status === "error" || d.status === "notFound") && routeNeedsLoad(route) ? {
-							status: "pending",
-							error: void 0
-						} : void 0
-					};
-					d._flight = void 0;
-					return next;
-				}
-				return d;
-			};
-			this._committed = committedMatches.map(invalidate);
-			for (const [id, match] of this._cache) if (invalidIds.has(id)) {
-				match.invalid = true;
-				if (opts?.forcePending) match.status = "pending";
-			}
-			for (const id of invalidIds) {
-				const flight = this._flights?.get(id);
-				this._flights?.delete(id);
-				if (flight && !flight[2]) abort.push(flight[1]);
-			}
-			for (const controller of abort) controller.abort();
-			this.shouldViewTransition = false;
-			return this.load({ sync: opts?.sync });
-		};
-		this.resolveRedirect = (redirect) => {
-			const options = redirect.options;
-			let href = redirect.headers.get("Location") || options.href;
-			if (!href) {
-				const location = this.buildLocation(options);
-				href = (location.maskedLocation ?? location).publicHref || "/";
-			}
-			let scheme;
-			if (protocolRelativePrefixRegex.test(href) || (scheme = getUrlScheme(href)) && !this.protocolAllowlist.has(scheme)) throw new Error("Redirect blocked: unsafe protocol");
-			if (scheme === "http:" || scheme === "https:") {
-				const url = new URL(href);
-				if (url.pathname.startsWith("//")) href = url.href;
-				else if (!isExternalUrl(url, this.origin)) {
-					href = getUrlPath(url);
-					scheme = void 0;
-				}
-			}
-			if (scheme) options.reloadDocument = true;
-			options.href = href;
-			redirect.headers.set("Location", href);
-			return redirect;
-		};
-		this.clearCache = (opts) => {
-			const cached = this._cache;
-			const preloads = this._preloads;
-			const filter = opts?.filter;
-			const discarded = [];
-			const discardedIds = [];
-			for (const [id, match] of cached) if (!filter || filter(match)) {
-				discardedIds.push(id);
-				discarded.push(match);
-			}
-			const abort = [];
-			for (const [controller, matches] of preloads ?? []) if (!filter || matches.some(filter)) {
-				abort.push(controller);
-				discarded.push(...matches);
-			}
-			for (const id of discardedIds) cached.delete(id);
-			for (const controller of abort) preloads.delete(controller);
-			for (const match of discarded) {
-				const flight = match._flight;
-				match._flight = void 0;
-				if (flight && !--flight[2]) {
-					if (this._flights?.get(match.id) === flight) this._flights.delete(match.id);
-					abort.push(flight[1]);
-				}
-			}
-			for (const controller of abort) controller.abort();
-		};
-		this.loadRouteChunk = loadRouteChunk;
-		this.preloadRoute = (opts) => preloadClientRoute(this, opts);
-		this.matchRoute = (location, opts) => {
-			const matchLocation = {
-				...location,
-				to: location.to ? resolvePath(location.from || "", location.to, this.options.trailingSlash, this.resolvePathCache) : void 0,
-				params: location.params || {},
-				leaveParams: true
-			};
-			const next = this.buildLocation(matchLocation);
-			const isPending = this.stores.status.get() === "pending";
-			if (opts?.pending && !isPending) return false;
-			const baseLocation = opts?.pending ?? !isPending ? this.latestLocation : this.stores.resolvedLocation.get() || this.stores.location.get();
-			const match = findSingleMatch(next.pathname, opts?.caseSensitive ?? false, opts?.fuzzy ?? false, baseLocation.pathname, this.processedTree);
-			if (!match) return false;
-			if (location.params) {
-				if (!deepEqual(match.rawParams, location.params, true)) return false;
-			}
-			if (opts?.includeSearch ?? true) return deepEqual(baseLocation.search, next.search, true) ? match.rawParams : false;
-			return match.rawParams;
-		};
-		this.getStoreConfig = getStoreConfig;
-		if (options.pathParamsAllowedCharacters?.length) this.pathParamsDecoder = compileDecodeCharMap(options.pathParamsAllowedCharacters);
-		this.update({
-			defaultPreloadDelay: 50,
-			defaultPendingMs: 1e3,
-			defaultPendingMinMs: 500,
-			context: void 0,
-			...options,
-			caseSensitive: options.caseSensitive ?? false,
-			notFoundMode: options.notFoundMode ?? "fuzzy",
-			stringifySearch: options.stringifySearch ?? defaultStringifySearch,
-			parseSearch: options.parseSearch ?? defaultParseSearch,
-			protocolAllowlist: options.protocolAllowlist ?? DEFAULT_PROTOCOL_ALLOWLIST
-		});
-	}
-	isShell() {
-		return !!this.options.isShell;
-	}
-	get state() {
-		return this.stores.__store.get();
-	}
-	setRoutes(caches) {
-		Object.assign(this, caches);
-		this.lightweightCache = /* @__PURE__ */ new WeakMap();
-		const notFoundRoute = this.options.notFoundRoute;
-		if (notFoundRoute) {
-			notFoundRoute.init(99999999999);
-			if (this.routesById[notFoundRoute.id] !== notFoundRoute) notFoundRoute._interpolation = parseSegments(false, notFoundRoute, 0);
-			this.routesById[notFoundRoute.id] = notFoundRoute;
-		}
-	}
-	matchRoutesInternal(next, opts) {
-		const [initialMatchedRoutes, rawParams, foundRoute] = this.getMatchedRoutes(next.pathname);
-		let matchedRoutes = initialMatchedRoutes;
-		let isGlobalNotFound = false;
-		if (foundRoute ? foundRoute.path !== "/" && rawParams["**"] : trimPathRight(next.pathname)) if (this.options.notFoundRoute) matchedRoutes = [...matchedRoutes, this.options.notFoundRoute];
-		else isGlobalNotFound = true;
-		const _notFoundRouteId = isGlobalNotFound ? findGlobalNotFoundRouteId(this.options.notFoundMode, matchedRoutes) : void 0;
-		const matches = new Array(matchedRoutes.length);
-		const committed = this._committed;
-		const previousAt = (route, index) => {
-			const match = committed[index];
-			return match?.routeId === route.id ? match : route === this.options.notFoundRoute ? committed.find((candidate) => candidate.routeId === route.id) : void 0;
-		};
-		let strictParams;
-		for (let index = 0; index < matchedRoutes.length; index++) {
-			const route = matchedRoutes[index];
-			const parentMatch = matches[index - 1];
-			let preMatchSearch;
-			let strictMatchSearch;
-			let searchError;
-			{
-				const parentSearch = parentMatch?.search ?? next.search;
-				const parentStrictSearch = parentMatch?._strictSearch ?? void 0;
-				try {
-					const strictSearch = validateSearch(route.options.validateSearch, { ...parentSearch }) ?? void 0;
-					preMatchSearch = {
-						...parentSearch,
-						...strictSearch
-					};
-					strictMatchSearch = {
-						...parentStrictSearch,
-						...strictSearch
-					};
-				} catch (err) {
-					let searchParamError = err;
-					if (!(err instanceof SearchParamError)) searchParamError = new SearchParamError(err.message, { cause: err });
-					if (opts?.throwOnError) throw searchParamError;
-					preMatchSearch = parentSearch;
-					strictMatchSearch = {};
-					searchError = searchParamError;
-				}
-			}
-			let loaderDeps = "";
-			let loaderDepsHash = "";
-			try {
-				loaderDeps = route.options.loaderDeps?.({ search: preMatchSearch }) ?? "";
-				loaderDepsHash = loaderDeps ? JSON.stringify(loaderDeps) || "" : "";
-			} catch (cause) {
-				if (opts?.throwOnError) throw cause;
-				searchError ??= cause;
-			}
-			const usedParams = createNull();
-			const interpolatedPath = route._interpolation ? interpolatePath(route.fullPath, route._interpolation, rawParams, this.pathParamsDecoder, usedParams) : route.fullPath;
-			const matchId = route.id + interpolatedPath + loaderDepsHash;
-			const previousMatch = previousAt(route, index);
-			const existingMatch = this._cache.get(matchId) ?? (previousMatch?.id === matchId ? previousMatch : void 0);
-			strictParams = existingMatch?._strictParams ?? Object.assign(usedParams, strictParams);
-			let paramsError;
-			if (!existingMatch) try {
-				extractStrictParams(route, strictParams);
-			} catch (err) {
-				if (isNotFound(err) || isRedirect(err)) paramsError = err;
-				else paramsError = new PathParamError(err.message, { cause: err });
-				if (opts?.throwOnError) throw paramsError;
-			}
-			const cause = previousMatch ? "stay" : "enter";
-			let match;
-			if (existingMatch) match = {
-				...existingMatch,
-				cause,
-				search: previousMatch ? nullReplaceEqualDeep(previousMatch.search, preMatchSearch) : nullReplaceEqualDeep(existingMatch.search, preMatchSearch),
-				_strictSearch: strictMatchSearch,
-				searchError
-			};
-			else {
-				const status = routeNeedsLoad(route) ? "pending" : "success";
-				match = {
-					id: matchId,
-					ssr: void 0,
-					index,
-					routeId: route.id,
-					params: previousMatch?.params ?? strictParams,
-					_strictParams: strictParams,
-					pathname: interpolatedPath,
-					updatedAt: Date.now(),
-					search: previousMatch ? nullReplaceEqualDeep(previousMatch.search, preMatchSearch) : preMatchSearch,
-					_strictSearch: strictMatchSearch,
-					searchError,
-					status,
-					isFetching: false,
-					error: void 0,
-					paramsError,
-					context: {},
-					abortController: opts?._controller ?? new AbortController(),
-					cause,
-					loaderDeps: previousMatch ? replaceEqualDeep(previousMatch.loaderDeps, loaderDeps) : loaderDeps,
-					invalid: false,
-					preload: false,
-					staticData: route.options.staticData || {},
-					fullPath: route.fullPath
-				};
-			}
-			const _notFound = _notFoundRouteId === route.id;
-			if (match._notFound && !_notFound) match.error = void 0;
-			match._notFound = _notFound;
-			matches[index] = match;
-		}
-		for (let index = 0; index < matches.length; index++) {
-			const match = matches[index];
-			match.params = match.cause === "stay" ? nullReplaceEqualDeep(match.params, strictParams) : strictParams;
-			if (opts?._controller) match.context = {};
-		}
-		return matches;
-	}
-	/**
-	* Lightweight route matching for buildLocation.
-	* Only computes fullPath, accumulated search, and params - skipping expensive
-	* operations like AbortController, loaderDeps, and full match objects.
-	*/
-	matchRoutesLightweight(location) {
-		const lastRouteId = last(this.stores.ids.get());
-		const lastStateMatch = lastRouteId ? this.stores.byRoute.get(lastRouteId).get() : void 0;
-		const lastStateMatchId = lastStateMatch?.id;
-		const cached = this.lightweightCache.get(location);
-		if (cached && cached[0] === lastStateMatchId) return cached[1];
-		const [matchedRoutes, rawParams] = this.getMatchedRoutes(location.pathname);
-		const lastRoute = last(matchedRoutes);
-		const accumulatedSearch = { ...location.search };
-		for (const route of matchedRoutes) try {
-			Object.assign(accumulatedSearch, validateSearch(route.options.validateSearch, accumulatedSearch));
-		} catch {}
-		const canReuseParams = lastStateMatch && lastStateMatch.routeId === lastRoute.id && lastStateMatch.pathname === location.pathname;
-		let params;
-		if (canReuseParams) params = lastStateMatch.params;
-		else {
-			const strictParams = rawParams;
-			for (const route of matchedRoutes) try {
-				extractStrictParams(route, strictParams);
-			} catch {}
-			params = strictParams;
-		}
-		const result = [
-			matchedRoutes,
-			lastRoute.fullPath,
-			accumulatedSearch,
-			params
-		];
-		this.lightweightCache.set(location, [lastStateMatchId, result]);
-		return result;
-	}
-};
-/** Error thrown when search parameter validation fails. */
-var SearchParamError = class extends Error {};
-/** Error thrown when path parameter parsing/validation fails. */
-var PathParamError = class extends Error {};
-function validateSearch(validateSearch, input) {
-	if (validateSearch == null) return {};
-	if ("~standard" in validateSearch) {
-		const result = validateSearch["~standard"].validate(input);
-		if (result instanceof Promise) throw new SearchParamError("Async validation not supported");
-		if (result.issues) throw new SearchParamError(JSON.stringify(result.issues, void 0, 2), { cause: result });
-		return result.value;
-	}
-	if ("parse" in validateSearch) return validateSearch.parse(input);
-	if (typeof validateSearch === "function") return validateSearch(input);
-	return {};
-}
-function resolveNextParams(spec, base) {
-	if (spec === void 0 || spec === true) return base;
-	const next = Object.create(null);
-	if (spec === false || spec === null) return next;
-	if (typeof spec === "function") {
-		Object.assign(next, base);
-		return Object.assign(next, spec(next));
-	}
-	return Object.assign(next, base, spec);
-}
-function needsInheritedParams(spec, interpolation) {
-	if (typeof spec === "function") return true;
-	if (!interpolation || spec === false || spec === null) return false;
-	return spec === void 0 || spec === true || interpolation.some((part) => typeof part !== "string" && !hasOwn.call(spec, part[1]));
-}
-var EMPTY_RECORD = Object.freeze({});
-function getSearchMiddlewares(destRoutes, includeValidateSearch) {
-	const middlewares = [];
-	for (let i = 0; i < destRoutes.length; i++) {
-		const routeOptions = destRoutes[i].options;
-		if ("search" in routeOptions) {
-			if (routeOptions.search?.middlewares) middlewares.push(...routeOptions.search.middlewares);
-		} else if (routeOptions.preSearchFilters || routeOptions.postSearchFilters) {
-			const legacyMiddleware = ({ search, next }) => {
-				const result = next(routeOptions.preSearchFilters ? routeOptions.preSearchFilters.reduce((prev, next) => next(prev), search) : search);
-				return routeOptions.postSearchFilters ? routeOptions.postSearchFilters.reduce((prev, next) => next(prev), result) : result;
-			};
-			middlewares.push(legacyMiddleware);
-		}
-		const routeValidateSearch = routeOptions.validateSearch;
-		if (includeValidateSearch && routeValidateSearch) {
-			const validate = ({ search, next, meta }) => {
-				const result = next(search);
-				try {
-					const validated = validateSearch(routeValidateSearch, result);
-					if (meta && validated) {
-						for (const key in validated) if (!(key in result)) (meta.defaulted ||= /* @__PURE__ */ new Map()).set(key, validated[key]);
-					}
-					return {
-						...result,
-						...validated
-					};
-				} catch {}
-				return result;
-			};
-			middlewares.push(validate);
-		}
-	}
-	return middlewares;
-}
-function applySearchMiddleware(middlewares, search, dest) {
-	const applyNext = (index, currentSearch, meta) => {
-		if (index >= middlewares.length) {
-			if (!dest.search) return {};
-			if (dest.search === true) return currentSearch;
-			const result = functionalUpdate(dest.search, currentSearch);
-			if (meta) meta.explicit = result;
-			return result;
-		}
-		const next = (newSearch, collectMeta) => {
-			if (collectMeta) {
-				const nextMeta = meta || {};
-				return {
-					search: applyNext(index + 1, newSearch, nextMeta),
-					meta: nextMeta
-				};
-			}
-			return applyNext(index + 1, newSearch, meta);
-		};
-		return middlewares[index]({
-			search: currentSearch,
-			next,
-			meta
-		});
-	};
-	return applyNext(0, search);
-}
-function findGlobalNotFoundRouteId(notFoundMode, routes) {
-	if (notFoundMode !== "root") {
-		let fallback;
-		for (let i = routes.length - 1; i >= 0; i--) {
-			const route = routes[i];
-			if (route.options.notFoundComponent) return route.id;
-			fallback ||= route.children && route.id;
-		}
-		if (fallback) return fallback;
-	}
-	return rootRouteId;
-}
-function extractStrictParams(route, accumulatedParams) {
-	const parseParams = route.options.params?.parse ?? route.options.parseParams;
-	if (parseParams) Object.assign(accumulatedParams, parseParams(accumulatedParams));
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/load-client.js
-function preloadComponent(route, type) {
-	return route.options[type]?.preload?.();
-}
-function loadComponents(route, onPendingReady) {
-	const component = preloadComponent(route, "component");
-	let pending = preloadComponent(route, "pendingComponent");
-	if (onPendingReady) if (pending) pending = pending.then(onPendingReady);
-	else onPendingReady();
-	if (component && pending) return Promise.all([component, pending]).then(() => {});
-	return component ?? pending;
-}
-function loadRouteChunk(route, componentType, onPendingReady) {
-	const afterLazy = () => componentType === false ? void 0 : componentType ? preloadComponent(route, componentType) : loadComponents(route, onPendingReady);
-	const current = route._lazy;
-	if (current) return current === true ? afterLazy() : current.then(afterLazy);
-	if (!route.lazyFn) return afterLazy();
-	const promise = route.lazyFn().then((lazyRoute) => {
-		{
-			const { id: _id, ...options } = lazyRoute.options;
-			Object.assign(route.options, options);
-			route._lazy = true;
-		}
-	}, (error) => {
-		route._lazy = void 0;
-		throw error;
-	});
-	route._lazy = promise;
-	return promise.then(afterLazy);
-}
-/** Return the structural lane through the first terminal render boundary. */
-function _getRenderedMatches(matches) {
-	const end = matches.findIndex((match) => match.status !== "success" || match._notFound) + 1;
-	return end && end < matches.length ? matches.slice(0, end) : matches;
-}
-/** Return the lane whose document assets belong to the current presentation. */
-function _getAssetMatches(matches) {
-	let end = matches.length;
-	for (let index = 0; index < end; index++) {
-		const match = matches[index];
-		if (match._assetEnd !== void 0) {
-			end = Math.min(end, Math.max(index + 1, match._assetEnd));
-			continue;
-		}
-		if (match.status !== "success" || match._notFound) {
-			end = index + 1;
-			break;
-		}
-	}
-	return end < matches.length ? matches.slice(0, end) : matches;
-}
-var SUCCESS$1 = 0;
-var ERROR$1 = 1;
-var NOT_FOUND$1 = 2;
-var REDIRECTED$1 = 3;
-var CANCELED_OUTCOME = [4];
-function isControl(result) {
-	return typeof result[0] === "number";
-}
-function waitFor$1(value, signal) {
-	if (signal.aborted) return Promise.race([Promise.reject(signal), value]);
-	return new Promise((resolve, reject) => {
-		const abort = () => reject(signal);
-		signal.addEventListener("abort", abort, { once: true });
-		Promise.resolve(value).then(resolve, reject).then(() => signal.removeEventListener("abort", abort));
-	});
-}
-function getRoute$1(router, match) {
-	return router.routesById[match.routeId];
-}
-function normalize$1(value, rejected, routeId) {
-	if (isRedirect(value)) return [REDIRECTED$1, value];
-	if (isNotFound(value)) {
-		value.routeId ||= routeId;
-		return [NOT_FOUND$1, value];
-	}
-	if (!rejected) return [SUCCESS$1, value];
-	if (typeof value?.then === "function") value = new Error("A Promise was thrown", { cause: value });
-	return [ERROR$1, value];
-}
-function normalizeError$1(route, cause) {
-	let outcome = normalize$1(cause, true, route.id);
-	if (outcome[0] !== ERROR$1) return outcome;
-	try {
-		route.options.onError?.(outcome[1]);
-	} catch (onErrorCause) {
-		outcome = normalize$1(onErrorCause, true, route.id);
-	}
-	return outcome;
-}
-function normalizeLaneError(router, lane, route, cause, options) {
-	if (options[0].signal.aborted) return CANCELED_OUTCOME;
-	return materializeRedirect$1(router, lane, route, normalizeError$1(route, cause), options);
-}
-async function contextualize$1(router, lane, options, end, planSuccessfulLane, retainedEnd) {
-	const [location, matches] = lane;
-	const signal = options[0].signal;
-	const preload = !!options[3];
-	for (let index = options[6] ?? 0; index < end; index++) {
-		const match = matches[index];
-		const route = getRoute$1(router, match);
-		match.abortController = options[0];
-		const parentContext = matches[index - 1]?.context ?? router.options.context ?? {};
-		const common = {
-			params: match.params,
-			location,
-			navigate: (opts) => router.navigate({
-				...opts,
-				_fromLocation: location
-			}),
-			buildLocation: router.buildLocation,
-			cause: preload ? "preload" : match.cause,
-			abortController: options[0],
-			preload,
-			matches,
-			routeId: route.id
-		};
-		try {
-			const routeContext = match._ctx ||= route.options.context ? route.options.context({
-				...common,
-				deps: match.loaderDeps,
-				context: parentContext
-			}) || {} : void 0;
-			match.context = {
-				...parentContext,
-				...routeContext
-			};
-		} catch (cause) {
-			releaseFlight(router, match);
-			return [index, normalizeLaneError(router, lane, route, cause, options)];
-		}
-		if (signal.aborted) return [index, CANCELED_OUTCOME];
-		const validationError = match.paramsError ?? match.searchError;
-		if (validationError !== void 0) {
-			releaseFlight(router, match);
-			return [index, normalizeLaneError(router, lane, route, validationError, options)];
-		}
-		const beforeLoad = route.options.beforeLoad;
-		if (!beforeLoad) continue;
-		const previousStatus = match.status;
-		if (index >= retainedEnd) {
-			match.status = "pending";
-			options[7]?.();
-		}
-		try {
-			setFetching(router, match, "beforeLoad", options[0]);
-			const value = beforeLoad({
-				...common,
-				search: match.search,
-				context: match.context,
-				...router.options.additionalContext
-			});
-			const result = await (typeof value?.then === "function" ? waitFor$1(value, signal) : value);
-			if (signal.aborted) return [index, CANCELED_OUTCOME];
-			const outcome = materializeRedirect$1(router, lane, route, normalize$1(result, false, route.id), options);
-			if (outcome[0] !== SUCCESS$1) {
-				releaseFlight(router, match);
-				return [index, outcome];
-			}
-			match.context = {
-				...match.context,
-				...result
-			};
-		} catch (cause) {
-			releaseFlight(router, match);
-			return [index, normalizeLaneError(router, lane, route, cause, options)];
-		} finally {
-			match.status = previousStatus;
-			setFetching(router, match, false, options[0]);
-		}
-	}
-	planSuccessfulLane();
-}
-function releaseOwnedFlight(router, match, flight) {
-	if (!flight || --flight[2]) return;
-	if (router._flights?.get(match.id) === flight) {
-		const current = router._tx;
-		if (current && !current[0].signal.aborted && !current[3].includes(match) && current[3].some((candidate) => candidate.id === match.id) && current[3].some((candidate) => candidate.isFetching === "beforeLoad")) return;
-		router._flights.delete(match.id);
-	}
-	return flight[1];
-}
-function releaseFlight(router, match) {
-	const flight = match._flight;
-	match._flight = void 0;
-	releaseOwnedFlight(router, match, flight)?.abort();
-}
-/**
-* Not passing in a `next` ownership recipient
-* is equivalent to discarding the match resources
-*/
-function transferMatchResources(router, previous, next, deferSameIdFlight) {
-	const abort = [];
-	for (const match of previous) if (!next?.includes(match)) {
-		const flight = match._flight;
-		match._flight = void 0;
-		if (deferSameIdFlight && flight?.[2] === 1 && router._flights?.get(match.id) === flight && next?.some((candidate) => candidate.id === match.id)) flight[2] = 0;
-		else {
-			const controller = releaseOwnedFlight(router, match, flight);
-			if (controller) abort.push(controller);
-		}
-	}
-	for (const controller of abort) controller.abort();
-}
-function acquireMatchResources(matches) {
-	for (const match of matches) {
-		const flight = match._flight;
-		if (flight) flight[2]++;
-	}
-}
-function setFetching(router, match, value, owner) {
-	match.isFetching = value;
-	if (owner && router._tx?.[0] !== owner) return;
-	const store = router.stores.byRoute.get(match.routeId);
-	const presented = store?.get();
-	if (presented?.id === match.id) store.set({
-		...presented,
-		isFetching: value
-	});
-}
-function getLoaderContext$1(router, lane, match, route, controller, parentMatchPromise, preload) {
-	const location = lane[0];
-	return {
-		params: match.params,
-		location,
-		navigate: (opts) => router.navigate({
-			...opts,
-			_fromLocation: location
-		}),
-		cause: preload ? "preload" : match.cause,
-		abortController: controller,
-		preload,
-		deps: match.loaderDeps,
-		parentMatchPromise,
-		context: match.context,
-		route,
-		...router.options.additionalContext
-	};
-}
-async function loadResource(router, lane, match, route, loader, parentMatchPromise, options) {
-	const owner = options[0];
-	const signal = owner.signal;
-	if (signal.aborted) return CANCELED_OUTCOME;
-	if (!loader) return [SUCCESS$1, void 0];
-	let flight = match._flight;
-	setFetching(router, match, "loader", owner);
-	try {
-		if (!flight) {
-			const controller = new AbortController();
-			flight = [
-				Promise.resolve().then(() => loader(getLoaderContext$1(router, lane, match, route, controller, parentMatchPromise, !!options[3]))).then((value) => normalize$1(value, false, route.id), (cause) => normalize$1(cause, true, route.id)).then((result) => {
-					if (result[0] !== SUCCESS$1 && router._flights?.get(match.id) === flight) {
-						router._flights.delete(match.id);
-						if (!flight[2]) controller.abort();
-					}
-					return result[0] === ERROR$1 && flight[2] ? normalizeError$1(route, result[1]) : result;
-				}),
-				controller,
-				1
-			];
-			(router._flights ??= /* @__PURE__ */ new Map()).set(match.id, flight);
-		}
-		match._flight = flight;
-		match.abortController = flight[1];
-		return materializeRedirect$1(router, lane, route, await waitFor$1(flight[0], signal), options);
-	} catch (cause) {
-		if (cause !== signal || !signal.aborted) throw cause;
-		releaseFlight(router, match);
-		return CANCELED_OUTCOME;
-	} finally {
-		setFetching(router, match, false, owner);
-	}
-}
-function settleInto(match, result, preload) {
-	if (result[0] === REDIRECTED$1) return;
-	match.status = "success";
-	match.error = void 0;
-	if (result[0] === SUCCESS$1) {
-		match.loaderData = result[1];
-		match.invalid = false;
-		match.updatedAt = Date.now();
-		match.preload = preload;
-	} else match.invalid = true;
-}
-function cacheLoaderMatch(router, match, planned) {
-	const current = router._cache.get(match.id);
-	if (current !== planned || router._committed.some((candidate) => candidate.id === match.id && candidate._flight === match._flight)) return;
-	const cached = {
-		...match,
-		_notFound: void 0,
-		context: {}
-	};
-	if (cached._flight) cached._flight[2]++;
-	router._cache.set(match.id, cached);
-	if (current) releaseFlight(router, current);
-}
-function getParentSnapshot(match, outcome) {
-	if (outcome[0] === ERROR$1 || outcome[0] === NOT_FOUND$1) return {
-		...match,
-		status: outcome[0] === ERROR$1 ? "error" : "notFound",
-		error: outcome[1],
-		_flight: void 0
-	};
-	return match;
-}
-function createLoaderTask$1(router, lane, index, tasks, semanticParent, options, retainedEnd) {
-	const match = lane[1][index];
-	const route = getRoute$1(router, match);
-	const preload = !!options[3];
-	const plannedCacheMatch = router._cache.get(match.id);
-	let configured;
-	let reload = false;
-	let reloadFailure;
-	try {
-		if (match.status === "success") {
-			configured = route.options.shouldReload;
-			if (typeof configured === "function") configured = configured(getLoaderContext$1(router, lane, match, route, options[0], semanticParent, preload));
-			if (options[0].signal.aborted) reloadFailure = CANCELED_OUTCOME;
-		}
-		if (!reloadFailure) if (match.status !== "success") reload = true;
-		else {
-			const staleAge = preload || match.preload ? route.options.preloadStaleTime ?? router.options.defaultPreloadStaleTime ?? 3e4 : route.options.staleTime ?? router.options.defaultStaleTime ?? 0;
-			reload = !!(match.invalid || configured || configured === void 0 && Date.now() - match.updatedAt >= staleAge && (options[5] || match.cause === "enter" || options[2].some((candidate) => candidate.routeId === match.routeId && candidate.id !== match.id)));
-		}
-	} catch (cause) {
-		match.invalid = true;
-		releaseFlight(router, match);
-		reloadFailure = normalizeLaneError(router, lane, route, cause, options);
-	}
-	const routeLoader = route.options.loader;
-	const isLoaderFn = typeof routeLoader === "function";
-	const loader = isLoaderFn ? routeLoader : routeLoader?.handler;
-	const preloadable = !preload || route.options.preload !== false;
-	let donor = preloadable && routeLoader && true ? router._flights?.get(match.id) : void 0;
-	if (donor === match._flight || reloadFailure) donor = void 0;
-	else if (donor && !reload && !preload && configured === void 0) reload = true;
-	else if (!reload) donor = void 0;
-	const background = !!(routeLoader && reload && match.status === "success" && !preload && !options[4] && ((isLoaderFn ? void 0 : routeLoader.staleReloadMode) ?? router.options.defaultStaleReloadMode) !== "blocking");
-	const loaded = reload && preloadable;
-	const blocking = loaded && !background && (match.status !== "success" || !!routeLoader);
-	const onReady = index >= retainedEnd ? options[7] : void 0;
-	const onLazyReady = route.lazyFn && route._lazy !== true ? onReady : void 0;
-	if (loaded && !routeLoader) {
-		match.invalid = false;
-		match.updatedAt = Date.now();
-	}
-	if (donor) donor[2]++;
-	if (blocking) {
-		const acceptedFlight = match._flight;
-		match._flight = donor;
-		releaseOwnedFlight(router, match, acceptedFlight)?.abort();
-		if (index >= retainedEnd) match.status = "pending";
-		onReady?.();
-	}
-	if (!loaded) match.isFetching = false;
-	const outcome = !reloadFailure && blocking ? loadResource(router, lane, match, route, loader, semanticParent, options).then((result) => {
-		settleInto(match, result, preload);
-		if (result[0] === SUCCESS$1) {
-			if (routeLoader && !options[0].signal.aborted) cacheLoaderMatch(router, match, plannedCacheMatch);
-			if (index >= retainedEnd) match.status = "pending";
-		}
-		return result;
-	}) : Promise.resolve(reloadFailure ?? [SUCCESS$1, match.loaderData]);
-	const chunkFailure = (async () => {
-		try {
-			const chunk = loadRouteChunk(route, void 0, onLazyReady);
-			if (chunk) await waitFor$1(chunk, options[0].signal);
-		} catch (cause) {
-			if (!lane[1].some((candidate, candidateIndex) => candidateIndex <= index && (candidate.status === "error" || candidate.status === "notFound" || candidate._notFound))) return [index, normalizeLaneError(router, lane, route, cause, options)];
-		}
-		const result = await outcome;
-		if (blocking && result[0] === SUCCESS$1 && match.status === "pending" && !options[0].signal.aborted) {
-			match.status = "success";
-			onReady?.();
-		}
-	})();
-	tasks.push([
-		index,
-		outcome,
-		chunkFailure
-	]);
-	if (!background) return outcome.then((result) => getParentSnapshot(match, result));
-	const candidate = {
-		...match,
-		status: "pending",
-		preload: false,
-		_flight: donor
-	};
-	match.invalid = false;
-	match.isFetching = "loader";
-	const backgroundOutcome = loadResource(router, lane, candidate, route, loader, semanticParent, options).then((result) => {
-		match.isFetching = false;
-		settleInto(candidate, result, false);
-		return result;
-	});
-	(lane[2] ??= []).push([
-		index,
-		backgroundOutcome,
-		chunkFailure,
-		candidate
-	]);
-	return backgroundOutcome.then((result) => getParentSnapshot(candidate, result));
-}
-async function getNotFoundBoundary$1(router, matches, indexed, signal, fallback = 0) {
-	const cause = indexed?.[1][1];
-	let index = cause?.routeId ? matches.findIndex((match) => match.routeId === cause.routeId) : indexed?.[0] ?? matches.length - 1;
-	if (index < 0) index = 0;
-	for (let i = index; i >= 0; i--) {
-		const route = getRoute$1(router, matches[i]);
-		try {
-			const loading = loadRouteChunk(route, false);
-			if (loading) await waitFor$1(loading, signal);
-		} catch (cause) {
-			if (cause === signal && signal.aborted) throw cause;
-		}
-		if (route.options.notFoundComponent) return i;
-	}
-	return cause?.routeId ? index : fallback;
-}
-function discardBackground(router, lane) {
-	if (lane[2]) {
-		transferMatchResources(router, lane[2].map((task) => task[3]));
-		lane[2] = void 0;
-	}
-}
-async function settleTasks(tasks, serialFailure, redirectTasks, gate) {
-	let loaderFailure;
-	try {
-		await Promise.all(tasks.map((task) => task[1].then(async (outcome) => {
-			const taskIndex = task[0];
-			if (gate && taskIndex >= await gate) return;
-			if (outcome[0] >= REDIRECTED$1) throw [taskIndex, outcome];
-			if (!loaderFailure && outcome[0] !== SUCCESS$1) {
-				loaderFailure = [taskIndex, outcome];
-				await Promise.all((redirectTasks ?? []).map((nextTask) => {
-					if (nextTask[0] <= taskIndex) return;
-					return nextTask[1].then((nextOutcome) => {
-						if (nextOutcome[0] === REDIRECTED$1) throw [nextTask[0], nextOutcome];
-					});
-				}));
-			}
-		})));
-	} catch (cause) {
-		return cause;
-	}
-	return serialFailure ?? loaderFailure;
-}
-function materializeRedirect$1(router, lane, route, outcome, options, failed) {
-	while (outcome[0] === REDIRECTED$1) {
-		const redirect = outcome[1];
-		const redirectOptions = redirect.options;
-		try {
-			if (redirectOptions.href || redirect.headers.has("Location")) {
-				router.resolveRedirect(redirect);
-				if (redirectOptions.reloadDocument) return outcome;
-			}
-			if (redirectOptions.reloadDocument ? options[3] : options[1] >= 20) return outcome;
-			const location = router.buildLocation({
-				...redirectOptions,
-				_fromLocation: lane[0],
-				_includeValidateSearch: true
-			});
-			const publicLocation = location.maskedLocation ?? location;
-			if (publicLocation.external) {
-				const resolved = redirect.clone();
-				resolved.options = { ...redirectOptions };
-				resolved.headers.set("Location", publicLocation.publicHref);
-				router.resolveRedirect(resolved);
-				return options[3] ? [REDIRECTED$1, resolved] : [
-					REDIRECTED$1,
-					resolved,
-					publicLocation
-				];
-			}
-			return [
-				REDIRECTED$1,
-				redirect,
-				location
-			];
-		} catch (cause) {
-			outcome = failed ? [ERROR$1, cause] : normalizeError$1(route, cause);
-			failed = true;
-		}
-	}
-	return outcome;
-}
-async function reduceLane(router, lane, tasks, controller, settlement, onReady) {
-	const matches = lane[1];
-	let failure = await settlement;
-	let redirectLimitExceeded = false;
-	const plannedBoundary = matches.findIndex((match) => match._notFound);
-	const boundaryOf = (found) => found[1][0] === NOT_FOUND$1 ? getNotFoundBoundary$1(router, matches, found, controller.signal) : found[0];
-	let readinessEnd = plannedBoundary < 0 ? matches.length : plannedBoundary;
-	if ((failure?.[1][0] ?? 0) >= REDIRECTED$1) readinessEnd = 0;
-	else if (failure) {
-		readinessEnd = failure[2] ??= await boundaryOf(failure);
-		for (const task of tasks) {
-			if (task[0] >= readinessEnd) break;
-			const outcome = await task[1];
-			if (outcome[0] !== SUCCESS$1 && outcome[0] < REDIRECTED$1 && !("loaderData" in matches[task[0]])) {
-				failure = [task[0], outcome];
-				readinessEnd = failure[2] = await boundaryOf(failure);
-				break;
-			}
-		}
-	}
-	for (const task of tasks) {
-		if (task[0] >= readinessEnd) break;
-		const chunkFailure = await task[2];
-		if (!chunkFailure) continue;
-		failure = chunkFailure;
-		break;
-	}
-	if ((failure?.[1][0] ?? 0) >= REDIRECTED$1) {
-		const outcome = failure[1];
-		if (outcome[0] !== REDIRECTED$1 || outcome[1].options.reloadDocument || outcome[2]) {
-			discardBackground(router, lane);
-			return outcome;
-		}
-		redirectLimitExceeded = true;
-		failure = [0, [ERROR$1, /* @__PURE__ */ new Error("Too many redirects")]];
-	}
-	const boundary = failure ? failure[2] ?? await boundaryOf(failure) : plannedBoundary;
-	if (boundary >= 0) {
-		const outcome = failure?.[1];
-		const kind = outcome?.[0];
-		const match = matches[boundary];
-		const cause = outcome?.[1];
-		const install = () => {
-			if (outcome) {
-				match._notFound = void 0;
-				if (kind === ERROR$1) match.status = "error";
-				else {
-					cause.routeId = match.routeId;
-					if (match.routeId === router.routeTree.id) {
-						match.status = "success";
-						match._notFound = true;
-					} else match.status = "notFound";
-				}
-				match.error = cause;
-				match.isFetching = false;
-			}
-		};
-		install();
-		if (!outcome) onReady?.();
-		const route = getRoute$1(router, match);
-		try {
-			await waitFor$1(outcome ? Promise.resolve().then(() => loadRouteChunk(route, kind === ERROR$1 ? "errorComponent" : "notFoundComponent")) : Promise.all([loadRouteChunk(route), loadRouteChunk(route, "notFoundComponent")]), controller.signal);
-		} catch (cause) {
-			if (cause === controller.signal && controller.signal.aborted) {
-				discardBackground(router, lane);
-				return CANCELED_OUTCOME;
-			}
-		}
-		if (!outcome) match.status = "success";
-		else if (redirectLimitExceeded) {
-			controller.abort();
-			await Promise.all([
-				...tasks.map((task) => task[1]),
-				...tasks.map((task) => task[2]),
-				...(lane[2] ?? []).map((task) => task[1])
-			]);
-			discardBackground(router, lane);
-			transferMatchResources(router, matches);
-			install();
-		}
-	}
-	return lane;
-}
-async function projectLane$1(router, lane, signal, start = 0, end = lane[1].length) {
-	const matches = lane[1];
-	for (let index = start; index < end; index++) {
-		const match = matches[index];
-		const routeOptions = getRoute$1(router, match).options;
-		if (routeOptions.head || routeOptions.scripts) try {
-			const context = {
-				ssr: router.options.ssr,
-				matches,
-				match,
-				params: match.params,
-				loaderData: match.loaderData
-			};
-			const [head, scripts] = await waitFor$1(Promise.all([routeOptions.head?.(context), routeOptions.scripts?.(context)]), signal);
-			match.meta = head?.meta;
-			match.links = head?.links;
-			match.headScripts = head?.scripts;
-			match.styles = head?.styles;
-			match.scripts = scripts;
-		} catch (cause) {
-			if (cause === signal && signal.aborted) break;
-			console.error(cause);
-		}
-		if (match.status !== "success" || match._notFound) break;
-	}
-	return lane;
-}
-async function executeClientLane(router, location, matches, options) {
-	const matched = [location, matches];
-	const signal = options[0].signal;
-	let reduced;
-	try {
-		const presented = router.stores.matches.get();
-		let plannedBoundary = matches.findIndex((match) => match._notFound);
-		if (router.options.notFoundMode !== "root" && plannedBoundary >= 0) {
-			const boundary = await getNotFoundBoundary$1(router, matches, void 0, signal, plannedBoundary);
-			matches[plannedBoundary]._notFound = void 0;
-			matches[boundary]._notFound = true;
-			plannedBoundary = boundary;
-		}
-		let end = plannedBoundary < 0 ? matches.length : plannedBoundary + 1;
-		let retainedEnd = 0;
-		while (retainedEnd < end && retainedEnd !== plannedBoundary) {
-			const match = matches[retainedEnd];
-			const committed = options[2][retainedEnd];
-			const visible = presented[retainedEnd];
-			if (committed?.id !== match.id || committed.status !== "success" || match.preload || visible?.id !== match.id || visible.status !== "success") break;
-			retainedEnd++;
-			if (committed._notFound || visible._notFound) break;
-		}
-		const tasks = [];
-		const start = options[6] ?? 0;
-		let semanticParent = start ? Promise.resolve(matches[start - 1]) : void 0;
-		const planSuccessfulLane = () => {
-			for (let index = start; index < end; index++) {
-				if (signal.aborted) break;
-				semanticParent = createLoaderTask$1(router, matched, index, tasks, semanticParent, options, retainedEnd);
-			}
-		};
-		const failure = await contextualize$1(router, matched, options, end, planSuccessfulLane, retainedEnd);
-		if (failure) {
-			options[4] = true;
-			end = failure[0];
-			if (failure[1][0] === NOT_FOUND$1) {
-				const boundary = await getNotFoundBoundary$1(router, matches, failure, signal);
-				failure[2] = boundary;
-				end = Math.min(end, boundary + 1);
-			} else if (failure[1][0] >= REDIRECTED$1) end = 0;
-			planSuccessfulLane();
-		}
-		if (!signal.aborted && !options[3]) {
-			const abort = [];
-			for (const [id, flight] of router._flights ?? []) if (!flight[2]) {
-				router._flights.delete(id);
-				abort.push(flight[1]);
-			}
-			for (const controller of abort) controller.abort();
-		}
-		const reduction = reduceLane(router, matched, tasks, options[0], settleTasks(tasks, failure, matched[2]), options[7]);
-		if (matched[2]?.length) matched[3] = settleTasks(matched[2], void 0, void 0, reduction.then((foreground) => isControl(foreground) ? 0 : _getRenderedMatches(matches).length, () => 0));
-		reduced = await reduction;
-	} catch (cause) {
-		discardBackground(router, matched);
-		if (cause === signal && signal.aborted) return CANCELED_OUTCOME;
-		throw cause;
-	}
-	if (isControl(reduced)) return reduced;
-	return projectLane$1(router, reduced, signal, options[6] === matches.length ? options[6] : 0);
-}
-async function preloadClientRoute(router, opts) {
-	let location = router.buildLocation(opts);
-	for (let redirects = 0;; redirects++) {
-		const base = router._committed;
-		const controller = new AbortController();
-		let matches;
-		let active;
-		let result;
-		try {
-			try {
-				matches = router.matchRoutes(location, { _controller: controller });
-				acquireMatchResources(matches);
-				active = (router._preloads ??= /* @__PURE__ */ new Map()).set(controller, matches);
-				result = await executeClientLane(router, location, matches, [
-					controller,
-					redirects,
-					base,
-					true
-				]);
-			} finally {
-				if (active) {
-					active = active.delete(controller);
-					transferMatchResources(router, matches);
-				}
-				controller.abort();
-			}
-			if (!isControl(result)) return result[1];
-			if (!active || result.length < 3 || false) return;
-			location = result[2];
-		} catch (cause) {
-			if (!isNotFound(cause)) console.error(cause);
-			return;
-		}
-	}
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/await-signal.js
-function observeLate(callback, value) {
-	if (!callback) return;
-	try {
-		const result = callback(value);
-		if (result !== void 0) Promise.resolve(result).catch(() => {});
-	} catch {}
-}
-/**
-* Await `value` unless `signal` aborts first. A result that settles after the
-* abort is passed to `onLate` / `onLateError` instead.
-*
-* One abort listener per wait: SSR requests nest at most a few waits on one
-* signal, so pooling them was measurably slower than this.
-*/
-function waitForReason(value, signal, onLate, onLateError) {
-	const promise = Promise.resolve(value);
-	if (signal.aborted) {
-		promise.then((result) => observeLate(onLate, result), (error) => observeLate(onLateError, error));
-		return Promise.reject(signal.reason);
-	}
-	return new Promise((resolve, reject) => {
-		const abort = () => reject(signal.reason);
-		signal.addEventListener("abort", abort, { once: true });
-		promise.then((result) => {
-			signal.removeEventListener("abort", abort);
-			if (signal.aborted) observeLate(onLate, result);
-			else resolve(result);
-		}, (error) => {
-			signal.removeEventListener("abort", abort);
-			if (signal.aborted) observeLate(onLateError, error);
-			else reject(error);
-		});
-	});
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/load-server.js
-var SUCCESS = 0;
-var ERROR = 1;
-var NOT_FOUND = 2;
-var REDIRECTED = 3;
-var SKIPPED = 4;
-var MATCH_SETTLED_ABORT_REASON = Object.freeze({
-	name: "AbortError",
-	message: "TanStack Router aborted this server match because it settled."
-});
-var REDIRECT_ABORT_REASON = Object.freeze({
-	name: "AbortError",
-	message: "TanStack Router aborted this server match because of a redirect."
-});
-function getRoute(router, match) {
-	return router.routesById[match.routeId];
-}
-function normalize(value, rejected) {
-	if (isRedirect(value)) return [REDIRECTED, value];
-	if (isNotFound(value)) return [NOT_FOUND, value];
-	if (rejected && typeof value?.then === "function") value = new Error("A Promise was thrown", { cause: value });
-	return rejected ? [ERROR, value] : [SUCCESS, value];
-}
-function normalizeError(router, lane, route, cause, signal, notify = true) {
-	signal?.throwIfAborted();
-	let outcome = normalize(cause, true);
-	if (outcome[0] !== ERROR) return materializeRedirect(router, lane, route, outcome, signal, notify);
-	try {
-		route.options.onError?.(outcome[1]);
-	} catch (onErrorCause) {
-		outcome = normalize(onErrorCause, true);
-	}
-	signal?.throwIfAborted();
-	return materializeRedirect(router, lane, route, outcome, signal, notify);
-}
-function materializeRedirect(router, lane, route, outcome, signal, notify = true) {
-	if (outcome[0] !== REDIRECTED) return outcome;
-	signal?.throwIfAborted();
-	try {
-		outcome[1].options._fromLocation = lane.location;
-		router.resolveRedirect(outcome[1]);
-		signal?.throwIfAborted();
-		return outcome;
-	} catch (cause) {
-		signal?.throwIfAborted();
-		return notify ? normalizeError(router, lane, route, cause, signal, false) : [ERROR, cause];
-	}
-}
-function maybe(value, cause) {
-	if (cause !== void 0) return {
-		status: "error",
-		error: cause
-	};
-	return {
-		status: "success",
-		value
-	};
-}
-function navigateFrom(router, location) {
-	return (options) => router.navigate({
-		...options,
-		_fromLocation: location
-	});
-}
-function waitFor(value, signal) {
-	return signal ? waitForReason(value, signal) : value;
-}
-function resolveSsr(router, lane, index) {
-	const match = lane.matches[index];
-	const route = getRoute(router, match);
-	const parentSsr = lane.matches[index - 1]?.ssr;
-	if (router.isShell()) return route.id === rootRouteId;
-	if (parentSsr === false) return false;
-	const inherit = (value) => {
-		return value === true && parentSsr === "data-only" ? "data-only" : value;
-	};
-	const defaultSsr = router.options.defaultSsr ?? true;
-	const inheritedDefault = inherit(defaultSsr);
-	match.ssr = inheritedDefault;
-	const option = route.options.ssr;
-	if (option === void 0) return inheritedDefault;
-	if (typeof option !== "function") return inherit(option);
-	const context = {
-		search: maybe(match.search, match.searchError),
-		params: maybe(match.params, match.paramsError),
-		location: lane.location,
-		matches: lane.matches.map((candidate) => ({
-			index: candidate.index,
-			pathname: candidate.pathname,
-			fullPath: candidate.fullPath,
-			staticData: candidate.staticData,
-			id: candidate.id,
-			routeId: candidate.routeId,
-			search: maybe(candidate.search, candidate.searchError),
-			params: maybe(candidate.params, candidate.paramsError),
-			ssr: candidate.ssr
-		}))
-	};
-	try {
-		return Promise.resolve(option(context)).then((value) => inherit(value ?? defaultSsr));
-	} catch (cause) {
-		return Promise.reject(cause);
-	}
-}
-function stampNotFound(match, outcome) {
-	if (outcome[0] === NOT_FOUND && !outcome[1].routeId) outcome[1].routeId = match.routeId;
-	return outcome;
-}
-async function contextualize(router, lane, signal) {
-	const globalBoundary = lane.matches.findIndex((match) => match._notFound);
-	let end = globalBoundary < 0 ? lane.matches.length : globalBoundary + 1;
-	let failure;
-	let parentContext = { ...router.options.context ?? {} };
-	for (let index = 0; index < end; index++) {
-		const match = lane.matches[index];
-		const route = getRoute(router, match);
-		try {
-			const ssr = resolveSsr(router, lane, index);
-			match.ssr = ssr instanceof Promise ? await ssr : ssr;
-		} catch (cause) {
-			signal?.throwIfAborted();
-			failure = [index, stampNotFound(match, normalizeError(router, lane, route, cause, signal))];
-			end = index;
-		}
-		signal?.throwIfAborted();
-		if (failure?.[1][0] === REDIRECTED) break;
-		match.__beforeLoadContext = void 0;
-		let context = parentContext;
-		try {
-			let routeContext;
-			if (route.options.context) {
-				const routeContextOptions = {
-					deps: match.loaderDeps,
-					params: match.params,
-					context: parentContext,
-					location: lane.location,
-					navigate: navigateFrom(router, lane.location),
-					buildLocation: router.buildLocation,
-					cause: match.cause,
-					abortController: match.abortController,
-					preload: false,
-					matches: lane.matches,
-					routeId: route.id
-				};
-				routeContext = route.options.context(routeContextOptions) ?? void 0;
-			}
-			context = {
-				...parentContext,
-				...routeContext
-			};
-			match.context = context;
-		} catch (cause) {
-			signal?.throwIfAborted();
-			if (!failure) failure = [index, stampNotFound(match, normalizeError(router, lane, route, cause, signal))];
-			end = index;
-			break;
-		}
-		signal?.throwIfAborted();
-		if (failure) break;
-		const validationError = match.paramsError ?? match.searchError;
-		if (validationError !== void 0) {
-			failure = [index, stampNotFound(match, normalizeError(router, lane, route, validationError, signal))];
-			end = index;
-			break;
-		}
-		signal?.throwIfAborted();
-		if (match.ssr === false || !route.options.beforeLoad) {
-			parentContext = context;
-			continue;
-		}
-		const abortController = match.abortController;
-		const options = {
-			search: match.search,
-			abortController,
-			params: match.params,
-			preload: false,
-			context,
-			location: lane.location,
-			navigate: navigateFrom(router, lane.location),
-			buildLocation: router.buildLocation,
-			cause: match.cause,
-			matches: lane.matches,
-			routeId: route.id,
-			...router.options.additionalContext
-		};
-		try {
-			const beforeLoadContext = await route.options.beforeLoad(options);
-			signal?.throwIfAborted();
-			const outcome = stampNotFound(match, materializeRedirect(router, lane, route, normalize(beforeLoadContext, false), signal));
-			if (outcome[0] !== SUCCESS) {
-				failure = [index, outcome];
-				end = index;
-				break;
-			}
-			match.__beforeLoadContext = beforeLoadContext;
-			match.context = {
-				...context,
-				...beforeLoadContext
-			};
-			parentContext = match.context;
-		} catch (cause) {
-			signal?.throwIfAborted();
-			failure = [index, stampNotFound(match, normalizeError(router, lane, route, cause, signal))];
-			end = index;
-			break;
-		}
-	}
-	return {
-		location: lane.location,
-		matches: lane.matches,
-		end,
-		failure
-	};
-}
-function getLoaderContext(router, lane, match, route, index, tasks) {
-	return {
-		params: match.params,
-		deps: match.loaderDeps,
-		preload: false,
-		parentMatchPromise: tasks[index - 1]?.match,
-		abortController: match.abortController,
-		context: match.context,
-		location: lane.location,
-		navigate: navigateFrom(router, lane.location),
-		cause: match.cause,
-		route,
-		...router.options.additionalContext
-	};
-}
-function createLoaderTask(router, lane, index, tasks, signal) {
-	const match = lane.matches[index];
-	const route = getRoute(router, match);
-	let outcome;
-	if (match.ssr === false) outcome = Promise.resolve([SKIPPED]);
-	else {
-		const routeLoader = route.options.loader;
-		const loader = typeof routeLoader === "function" ? routeLoader : routeLoader?.handler;
-		if (!loader) outcome = Promise.resolve([SUCCESS, void 0]);
-		else outcome = Promise.resolve().then(() => loader(getLoaderContext(router, lane, match, route, index, tasks))).then((result) => normalize(result, false), (cause) => normalize(cause, true)).then((result) => {
-			if (signal?.aborted || match.abortController.signal.reason === REDIRECT_ABORT_REASON) return [SKIPPED];
-			if (result[0] === ERROR) result = normalizeError(router, lane, route, result[1], signal);
-			else result = materializeRedirect(router, lane, route, result, signal);
-			return stampNotFound(match, result);
-		});
-	}
-	const parentMatch = outcome.then((result) => {
-		const snapshot = { ...match };
-		if (result[0] === SUCCESS) {
-			snapshot.loaderData = result[1];
-			snapshot.status = "success";
-			snapshot.error = void 0;
-			snapshot.invalid = false;
-			snapshot.isFetching = false;
-		} else if (result[0] === ERROR) {
-			snapshot.status = "error";
-			snapshot.error = result[1];
-		} else if (result[0] === NOT_FOUND) {
-			snapshot.status = "notFound";
-			snapshot.error = result[1];
-		}
-		return snapshot;
-	});
-	return {
-		index,
-		outcome,
-		match: parentMatch
-	};
-}
-async function getNotFoundBoundary(router, matches, indexed, signal, fallback = 0) {
-	const cause = indexed?.[1][1];
-	let index = cause?.routeId ? matches.findIndex((match) => match.routeId === cause.routeId) : indexed?.[0] ?? matches.length - 1;
-	if (index < 0) index = 0;
-	for (let candidate = index; candidate >= 0; candidate--) {
-		const route = getRoute(router, matches[candidate]);
-		try {
-			const loading = loadRouteChunk(route, false);
-			if (loading) await loading;
-		} catch {
-			signal?.throwIfAborted();
-		}
-		signal?.throwIfAborted();
-		if (route.options.notFoundComponent) return candidate;
-	}
-	return cause?.routeId ? index : fallback;
-}
-function abortMatches(matches, start = 0, reason = MATCH_SETTLED_ABORT_REASON) {
-	for (let index = start; index < matches.length; index++) matches[index].abortController.abort(reason);
-}
-async function applyFailure(router, lane, indexed, signal) {
-	if (!indexed) {
-		const boundary = lane.matches.findIndex((match) => match._notFound);
-		if (boundary >= 0) {
-			abortMatches(lane.matches, boundary + 1);
-			return {
-				status: 404,
-				boundary,
-				kind: NOT_FOUND
-			};
-		}
-		return { status: 200 };
-	}
-	const [index, outcome] = indexed;
-	if (outcome[0] === ERROR) {
-		const match = lane.matches[index];
-		match._notFound = void 0;
-		match.status = "error";
-		match.error = outcome[1];
-		match.isFetching = false;
-		abortMatches(lane.matches, index + 1);
-		return {
-			status: 500,
-			boundary: index,
-			kind: ERROR
-		};
-	}
-	const boundary = indexed[2] ?? await getNotFoundBoundary(router, lane.matches, indexed, signal);
-	const match = lane.matches[boundary];
-	const cause = outcome[1];
-	cause.routeId = match.routeId;
-	match._notFound = void 0;
-	if (match.routeId === router.routeTree.id) {
-		match.status = "success";
-		match._notFound = true;
-		match.error = cause;
-	} else {
-		match.status = "notFound";
-		match.error = cause;
-	}
-	match.isFetching = false;
-	abortMatches(lane.matches, boundary + 1);
-	return {
-		status: 404,
-		boundary,
-		kind: NOT_FOUND
-	};
-}
-async function loadNormalChunks(router, lane, end, signal) {
-	const chunks = [];
-	for (let index = 0; index < lane.matches.length; index++) {
-		const match = lane.matches[index];
-		if (index >= end || match.ssr !== true || match.status !== "success") continue;
-		const route = getRoute(router, match);
-		try {
-			const loading = loadRouteChunk(route);
-			if (loading) {
-				const chunk = loading.then(() => {
-					signal?.throwIfAborted();
-				}, (cause) => {
-					signal?.throwIfAborted();
-					return [index, stampNotFound(match, normalizeError(router, lane, route, cause, signal))];
-				});
-				chunk.catch(() => {});
-				chunks.push(chunk);
-			}
-		} catch (cause) {
-			signal?.throwIfAborted();
-			chunks.push([index, stampNotFound(match, normalizeError(router, lane, route, cause, signal))]);
-		}
-	}
-	for (const chunk of chunks) {
-		const indexed = Array.isArray(chunk) ? chunk : await chunk;
-		if (indexed) return indexed;
-	}
-}
-async function projectLane(router, lane, signal) {
-	for (const match of lane.matches) {
-		const routeOptions = getRoute(router, match).options;
-		if (routeOptions.head || routeOptions.scripts || routeOptions.headers) {
-			const context = {
-				ssr: router.options.ssr,
-				matches: lane.matches,
-				match,
-				params: match.params,
-				loaderData: match.loaderData
-			};
-			try {
-				const [head, scripts, headers] = await Promise.all([
-					routeOptions.head?.(context),
-					routeOptions.scripts?.(context),
-					routeOptions.headers?.(context)
-				]);
-				signal?.throwIfAborted();
-				match.meta = head?.meta;
-				match.links = head?.links;
-				match.headScripts = head?.scripts;
-				match.styles = head?.styles;
-				match.scripts = scripts;
-				match.headers = headers;
-			} catch (cause) {
-				signal?.throwIfAborted();
-				console.error(cause);
-			}
-		}
-		if (match.ssr === false || match.status !== "success" || match._notFound) break;
-	}
-}
-async function executeServerLane(router, location, matchedMatches, signal) {
-	const matched = {
-		location,
-		matches: matchedMatches.map((match) => ({
-			...match,
-			__beforeLoadContext: void 0,
-			context: {},
-			isFetching: false,
-			abortController: new AbortController()
-		}))
-	};
-	const abortLane = () => abortMatches(matched.matches, 0, signal?.reason ?? MATCH_SETTLED_ABORT_REASON);
-	if (signal?.aborted) {
-		abortLane();
-		signal.throwIfAborted();
-	}
-	signal?.addEventListener("abort", abortLane, { once: true });
-	try {
-		const plannedGlobalBoundary = matched.matches.findIndex((match) => match._notFound);
-		if (router.options.notFoundMode !== "root" && plannedGlobalBoundary >= 0) {
-			const boundary = await getNotFoundBoundary(router, matched.matches, void 0, signal, plannedGlobalBoundary);
-			if (boundary !== plannedGlobalBoundary) {
-				matched.matches[plannedGlobalBoundary]._notFound = void 0;
-				matched.matches[boundary]._notFound = true;
-			}
-		}
-		const lane = await contextualize(router, matched, signal);
-		signal?.throwIfAborted();
-		let loaderEnd = lane.end;
-		if (lane.failure?.[1][0] === REDIRECTED) loaderEnd = 0;
-		else if (lane.failure?.[1][0] === NOT_FOUND) {
-			lane.failure[2] = await getNotFoundBoundary(router, lane.matches, lane.failure, signal);
-			loaderEnd = Math.min(loaderEnd, lane.failure[2] + 1);
-		}
-		const tasks = [];
-		for (let index = 0; index < loaderEnd; index++) {
-			const task = createLoaderTask(router, lane, index, tasks, signal);
-			tasks.push(task);
-		}
-		let loaderFailure;
-		let control = lane.failure?.[1][0] === REDIRECTED ? lane.failure : void 0;
-		try {
-			await Promise.all(tasks.map((task) => task.outcome.then((loadedOutcome) => {
-				const match = lane.matches[task.index];
-				const outcome = loadedOutcome;
-				if (outcome[0] === SUCCESS) {
-					match.loaderData = outcome[1];
-					match.status = "success";
-					match.error = void 0;
-					match.invalid = false;
-					match.isFetching = false;
-					match.updatedAt = Date.now();
-				} else if (outcome[0] === REDIRECTED) {
-					control = [task.index, outcome];
-					throw control;
-				} else {
-					if (match.ssr !== false) {
-						match.status = "success";
-						match.error = void 0;
-						match.invalid = true;
-						match.isFetching = false;
-					}
-					if (!loaderFailure && outcome[0] !== SKIPPED) loaderFailure = [task.index, outcome];
-				}
-			})));
-		} catch (cause) {
-			if (!Array.isArray(cause)) throw cause;
-			control = cause;
-		}
-		signal?.throwIfAborted();
-		if (control?.[1][0] === REDIRECTED) {
-			abortMatches(lane.matches, 0, REDIRECT_ABORT_REASON);
-			return {
-				type: "redirect",
-				redirect: control[1][1]
-			};
-		}
-		let failure = lane.failure ?? loaderFailure;
-		const plannedBoundary = lane.matches.findIndex((match) => match._notFound);
-		let readinessEnd;
-		if (failure) {
-			const outcomeEnd = failure[2] ??= failure[1][0] === NOT_FOUND ? await getNotFoundBoundary(router, lane.matches, failure, signal) : failure[0];
-			for (const task of tasks) {
-				if (task.index >= outcomeEnd) break;
-				const outcome = await task.outcome;
-				if (outcome[0] !== SUCCESS && outcome[0] < REDIRECTED && !("loaderData" in lane.matches[task.index])) {
-					failure = [task.index, outcome];
-					failure[2] = outcome[0] === NOT_FOUND ? await getNotFoundBoundary(router, lane.matches, failure, signal) : task.index;
-					break;
-				}
-			}
-			readinessEnd = failure[2];
-		} else readinessEnd = plannedBoundary < 0 ? lane.matches.length : plannedBoundary;
-		const requiredFailure = await loadNormalChunks(router, lane, readinessEnd, signal);
-		signal?.throwIfAborted();
-		if (requiredFailure) {
-			if (requiredFailure[1][0] === REDIRECTED) {
-				abortMatches(lane.matches, 0, REDIRECT_ABORT_REASON);
-				return {
-					type: "redirect",
-					redirect: requiredFailure[1][1]
-				};
-			}
-			failure = requiredFailure;
-		}
-		const terminal = await applyFailure(router, lane, failure, signal);
-		if (terminal.boundary !== void 0) {
-			const match = lane.matches[terminal.boundary];
-			if (match.ssr === true) {
-				const route = getRoute(router, match);
-				try {
-					if (terminal.kind === ERROR) await loadRouteChunk(route, "errorComponent");
-					else if (match._notFound) await Promise.all([loadRouteChunk(route), loadRouteChunk(route, "notFoundComponent")]);
-					else await loadRouteChunk(route, "notFoundComponent");
-				} catch {}
-				signal?.throwIfAborted();
-			}
-		}
-		signal?.throwIfAborted();
-		await projectLane(router, {
-			location: lane.location,
-			matches: lane.matches
-		}, signal);
-		signal?.throwIfAborted();
-		router.serverSsr?.onCleanup((settled) => {
-			if (!settled) abortLane();
-		});
-		return {
-			type: "render",
-			status: terminal.status,
-			matches: lane.matches
-		};
-	} finally {
-		signal?.removeEventListener("abort", abortLane);
-	}
-}
-async function loadServerRoute(router, opts) {
-	router.updateLatestLocation();
-	const next = router.latestLocation;
-	const previous = router._committed;
-	const previousEnd = router._lifecycleEnd;
-	let result;
-	try {
-		const canonical = router.buildLocation({
-			to: next.pathname,
-			search: true,
-			params: true,
-			hash: true,
-			state: true,
-			_includeValidateSearch: true
-		});
-		if (next.publicHref !== canonical.publicHref) throw redirect({ href: canonical.publicHref || "/" });
-		const changeInfo = getLocationChangeInfo(next, router.stores.resolvedLocation.get());
-		router.emit({
-			type: "onBeforeNavigate",
-			...changeInfo
-		});
-		router.emit({
-			type: "onBeforeLoad",
-			...changeInfo
-		});
-		opts?._signal?.throwIfAborted();
-		result = await waitFor(executeServerLane(router, next, router.matchRoutes(next), opts?._signal), opts?._signal);
-		opts?._signal?.throwIfAborted();
-	} catch (cause) {
-		opts?._signal?.throwIfAborted();
-		if (!isRedirect(cause)) throw cause;
-		cause.options._fromLocation = next;
-		result = {
-			type: "redirect",
-			redirect: router.resolveRedirect(cause)
-		};
-	}
-	router._serverResult = result;
-	let nextEnd = 0;
-	router.batch(() => {
-		router.stores.location.set(next);
-		router.stores.status.set("idle");
-		if (result.type === "render") {
-			router._committed = result.matches;
-			nextEnd = router._lifecycleEnd = lifecycleEnd(result.matches);
-			router.stores.setMatches(result.matches);
-			router.stores.resolvedLocation.set(next);
-		}
-	});
-	if (result.type === "render") runRouteLifecycle(router, previous, result.matches, previousEnd, nextEnd);
-	router._commitPromise?.resolve();
-	router._commitPromise = void 0;
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/utils.js
-/**
-* Return the last element of an array.
-* Intended for non-empty arrays used within router internals.
-*/
-function last(arr) {
-	return arr[arr.length - 1];
-}
-/**
-* Apply a value-or-updater to a previous value.
-* Accepts either a literal value or a function of the previous value.
-*/
-function functionalUpdate(updater, previous) {
-	if (typeof updater === "function") return updater(previous);
-	return updater;
-}
-var hasOwn = Object.prototype.hasOwnProperty;
-function hasKeys(obj) {
-	for (const key in obj) if (hasOwn.call(obj, key)) return true;
-	return false;
-}
-var createNull = () => Object.create(null);
-var nullReplaceEqualDeep = (prev, next) => replaceEqualDeep(prev, next, true);
-function replaceEqualDeep(prev, next, _nullProto, _depth = 0) {
-	return next;
-}
-function isPlainObject(o) {
-	if (!o || typeof o !== "object") return false;
-	return (Object.getPrototypeOf(o)?.constructor ?? Object) === Object;
-}
-/**
-* Perform a deep equality check optimized for router state comparisons.
-*
-* - `partial`: `b` may omit keys that `a` has (arrays stay length-exact).
-* - `explicitUndefined`: keys holding `undefined` take part in the comparison
-*   instead of being ignored.
-*
-* Internal: the flags are positional so hot callers pass no options object.
-*/
-function deepEqual(a, b, partial, explicitUndefined) {
-	if (a === b) return true;
-	if (Array.isArray(a) && Array.isArray(b)) {
-		if (a.length !== b.length) return false;
-		for (let i = 0, l = a.length; i < l; i++) {
-			const av = a[i];
-			const bv = b[i];
-			if (av !== bv && !deepEqual(av, bv, partial, explicitUndefined)) return false;
-		}
-		return true;
-	}
-	if (isPlainObject(a) && isPlainObject(b)) {
-		if (partial) {
-			for (const k in b) if (explicitUndefined || b[k] !== void 0) {
-				if (!deepEqual(a[k], b[k], partial, explicitUndefined)) return false;
-			}
-			return true;
-		}
-		let aCount = 0;
-		if (explicitUndefined) aCount = Object.keys(a).length;
-		else for (const k in a) if (a[k] !== void 0) aCount++;
-		for (const k in b) if (explicitUndefined || b[k] !== void 0) {
-			if (aCount-- === 0 || !deepEqual(a[k], b[k], partial, explicitUndefined)) return false;
-		}
-		return aCount === 0;
-	}
-	return false;
-}
-/**
-* Heuristically detect dynamic import "module not found" errors
-* across major browsers for lazy route component handling.
-*/
-function isModuleNotFoundError(error) {
-	if (typeof error?.message !== "string") return false;
-	return error.message.startsWith("Failed to fetch dynamically imported module") || error.message.startsWith("error loading dynamically imported module") || error.message.startsWith("Importing a module script failed");
-}
-function isPromise(value) {
-	return Boolean(value && typeof value === "object" && typeof value.then === "function");
-}
-/**
-* Re-encode characters that are unsafe in URL paths.
-* Includes ASCII control characters (0x00-0x1F, 0x7F) and a subset of the
-* WHATWG URL "path percent-encode set" (", <, >, `, {, }).
-*
-* Space (0x20) is intentionally excluded — decodeURI decodes %20 to space
-* and the router stores decoded spaces in location.pathname. The existing
-* encodePathLikeUrl already handles re-encoding spaces for outgoing URLs.
-*
-* These characters are decoded by decodeURI but must remain percent-encoded
-* in paths to match how upstream layers (CDNs, edge middleware, browsers)
-* interpret the URL, preventing infinite redirect loops and path mismatches.
-*/
-var PATH_UNSAFE_RE = /[\x00-\x1f\x7f"<>`{}]/g;
-function sanitizePathSegment(segment) {
-	return segment.replace(PATH_UNSAFE_RE, (ch) => "%" + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0"));
-}
-function decodeSegment(segment) {
-	let decoded;
-	try {
-		decoded = decodeURI(segment);
-	} catch {
-		decoded = segment.replaceAll(/%[0-9A-F]{2}/gi, (match) => {
-			try {
-				return decodeURI(match);
-			} catch {
-				return match;
-			}
-		});
-	}
-	return sanitizePathSegment(decoded);
-}
-/**
-* Default list of URL protocols to allow in links, redirects, and navigation.
-* Any absolute URL protocol not in this list is treated as dangerous by default.
-*/
-var DEFAULT_PROTOCOL_ALLOWLIST = [
-	"http:",
-	"https:",
-	"mailto:",
-	"tel:"
-];
-/**
-* Extract the explicit URL scheme, including its colon, using WHATWG
-* normalization rules. This does not validate the rest of the URL.
-*
-* Returning `undefined` means "no explicit scheme", not "safe URL";
-* protocol-relative URLs such as "//evil.example" require a separate check.
-*/
-function getUrlScheme(url) {
-	if (url[0] === "/") return;
-	if (!url.includes(":")) return;
-	return /^[\x00-\x20]*([a-z][a-z\d+.\t\n\r-]*:)/i.exec(url)?.[1]?.replace(/[\t\n\r]/g, "").toLowerCase();
-}
-var protocolRelativePrefixRegex = /^[\x00-\x20]*[\\/][\t\n\r]*[\\/]/;
-/**
-* Check if a URL string uses a protocol that is not in the allowlist or is
-* protocol-relative (e.g. "//evil.example"), which can navigate to another host.
-* Returns true for blocked protocols like javascript:, blob:, and data:, as
-* well as slash/backslash variants of protocol-relative URLs.
-*
-* Scheme parsing normalizes:
-* - Mixed case (JavaScript: → javascript:)
-* - Whitespace/control characters (java\nscript: → javascript:)
-* - Leading whitespace
-*
-* For relative URLs without a protocol-relative prefix, returns false.
-*
-* @param url - The URL string to check
-* @param allowlist - Set of protocols to allow
-* @returns true if the URL uses a protocol that is not allowed or can escape
-* the current origin through a protocol-relative URL
-*/
-function isDangerousProtocol(url, allowlist) {
-	if (!url) return false;
-	if (protocolRelativePrefixRegex.test(url)) return true;
-	const scheme = getUrlScheme(url);
-	return scheme ? !allowlist.has(scheme) : false;
-}
-var HTML_ESCAPE_LOOKUP = {
-	"&": "\\u0026",
-	">": "\\u003e",
-	"<": "\\u003c",
-	"\u2028": "\\u2028",
-	"\u2029": "\\u2029"
-};
-var HTML_ESCAPE_REGEX = /[&><\u2028\u2029]/g;
-/**
-* Escape HTML special characters in a string to prevent XSS attacks
-* when embedding strings in script tags during SSR.
-*
-* This is essential for preventing XSS vulnerabilities when user-controlled
-* content is embedded in inline scripts.
-*/
-function escapeHtml(str) {
-	return str.replace(HTML_ESCAPE_REGEX, (match) => HTML_ESCAPE_LOOKUP[match]);
-}
-function decodePath(path) {
-	if (!path) return path;
-	let result = path;
-	if (/[%\\\x00-\x1f\x7f]/.test(path)) {
-		const re = /%25|%5C/gi;
-		let cursor = 0;
-		let match;
-		result = "";
-		while (null !== (match = re.exec(path))) {
-			result += decodeSegment(path.slice(cursor, match.index)) + match[0];
-			cursor = re.lastIndex;
-		}
-		result += decodeSegment(cursor ? path.slice(cursor) : path);
-	}
-	return result;
-}
-/**
-* Encodes a path the same way `new URL()` would, but without the overhead of full URL parsing.
-*
-* This function encodes:
-* - Whitespace characters (spaces → %20, tabs → %09, etc.)
-* - Non-ASCII/Unicode characters (emojis, accented characters, etc.)
-*
-* It preserves:
-* - Already percent-encoded sequences (won't double-encode %2F, %25, etc.)
-* - ASCII special characters valid in URL paths (@, $, &, +, etc.)
-* - Forward slashes as path separators
-*
-* Used to generate proper href values for SSR without constructing URL objects.
-*
-* @example
-* encodePathLikeUrl('/path/file name.pdf') // '/path/file%20name.pdf'
-* encodePathLikeUrl('/path/日本語') // '/path/%E6%97%A5%E6%9C%AC%E8%AA%9E'
-* encodePathLikeUrl('/path/already%20encoded') // '/path/already%20encoded' (preserved)
-*/
-function encodePathLikeUrl(path) {
-	if (!/[\s\u0080-\uFFFF]/.test(path)) return path;
-	return path.replace(/\s|[^\u0000-\u007F]/gu, encodeURIComponent);
-}
-function arraysEqual(a, b) {
-	if (a === b) return true;
-	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-	return true;
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/manifest.js
-function getAssetCrossOrigin(assetCrossOrigin, kind) {
-	if (!assetCrossOrigin) return;
-	if (typeof assetCrossOrigin === "string") return assetCrossOrigin;
-	return assetCrossOrigin[kind];
-}
-function getManifestScriptFormat(manifest) {
-	return manifest?.scriptFormat ?? "module";
-}
-function getScriptPreloadAttrs(manifest, link, assetCrossOrigin) {
-	const preloadLink = resolveManifestAssetLink(link);
-	const crossOrigin = getAssetCrossOrigin(assetCrossOrigin, "script") ?? preloadLink.crossOrigin;
-	return {
-		...getManifestScriptFormat(manifest) === "iife" ? {
-			rel: "preload",
-			as: "script"
-		} : { rel: "modulepreload" },
-		href: preloadLink.href,
-		...crossOrigin ? { crossOrigin } : {}
-	};
-}
-function resolveManifestAssetLink(link) {
-	if (typeof link === "string") return {
-		href: link,
-		crossOrigin: void 0
-	};
-	return link;
-}
-function appendUniqueUserTags(target, tags) {
-	if (tags.length === 0) return;
-	if (tags.length === 1) {
-		target.push(tags[0]);
-		return;
-	}
-	const seen = /* @__PURE__ */ new Set();
-	for (const tag of tags) {
-		const key = JSON.stringify(tag);
-		if (seen.has(key)) continue;
-		seen.add(key);
-		target.push(tag);
-	}
-}
-function getStylesheetHref(asset) {
-	return resolveManifestCssLink(asset).href;
-}
-function resolveManifestCssLink(link) {
-	if (typeof link === "string") return {
-		href: link,
-		crossOrigin: void 0
-	};
-	return link;
-}
-function createInlineCssStyleAsset(css) {
-	return {
-		attrs: { suppressHydrationWarning: true },
-		children: css
-	};
-}
-function createInlineCssPlaceholderAsset() {
-	return { attrs: { suppressHydrationWarning: true } };
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/bodyScripts.js
-function getSsrBodyScriptParts(matches, manifest, nonce, routeScriptAttrs) {
-	const assetMatches = _getAssetMatches(matches);
-	const routeScripts = [];
-	const manifestScripts = [];
-	for (const match of assetMatches) for (const script of Array.isArray(match.scripts) ? match.scripts : []) {
-		if (!script) continue;
-		const { children, ...attrs } = script;
-		routeScripts.push({
-			tag: "script",
-			attrs: {
-				...attrs,
-				...routeScriptAttrs,
-				nonce
-			},
-			children
-		});
-	}
-	if (manifest) for (const match of assetMatches) for (const asset of manifest.routes[match.routeId]?.scripts ?? []) manifestScripts.push({
-		tag: "script",
-		attrs: {
-			...asset.attrs,
-			nonce
-		},
-		children: asset.children
-	});
-	return [routeScripts, manifestScripts];
-}
-function composeSsrBodyScripts([routeScripts, manifestScripts], initialHydrationScripts) {
-	if (!initialHydrationScripts) return [...routeScripts, ...manifestScripts];
-	return [
-		...initialHydrationScripts.before,
-		...routeScripts,
-		...manifestScripts,
-		initialHydrationScripts.boundary
-	];
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/route.js
-var BaseRoute = class {
-	get to() {
-		return this._to;
-	}
-	get id() {
-		return this._id;
-	}
-	get path() {
-		return this._path;
-	}
-	get fullPath() {
-		return this._fullPath;
-	}
-	constructor(options) {
-		this.init = (originalIndex) => {
-			this.originalIndex = originalIndex;
-			this._branch = void 0;
-			const options = this.options;
-			const isRoot = !options?.path && !options?.id;
-			this.parentRoute = this.options.getParentRoute?.();
-			if (isRoot) this._path = rootRouteId;
-			else if (!this.parentRoute) invariant();
-			let path = isRoot ? rootRouteId : options?.path;
-			if (path && path !== "/") path = trimPathLeft(path);
-			const customId = options?.id || path;
-			const id = isRoot ? rootRouteId : cleanPath((this.parentRoute.id === "__root__" ? "" : this.parentRoute.id) + "/" + (customId ?? ""));
-			if (path === "__root__") path = "/";
-			const fullPath = id === "__root__" ? "/" : path === void 0 ? this.parentRoute.fullPath : cleanPath(this.parentRoute.fullPath + "/" + path);
-			this._path = path;
-			this._id = id;
-			this._fullPath = fullPath;
-			this._to = trimPathRight(fullPath);
-		};
-		this.addChildren = (children) => {
-			return this._addFileChildren(children);
-		};
-		this._addFileChildren = (children) => {
-			if (Array.isArray(children)) this.children = children;
-			if (typeof children === "object" && children !== null) this.children = Object.values(children);
-			return this;
-		};
-		this._addFileTypes = () => {
-			return this;
-		};
-		this.updateLoader = (options) => {
-			Object.assign(this.options, options);
-			return this;
-		};
-		this.update = (options) => {
-			Object.assign(this.options, options);
-			return this;
-		};
-		this.lazy = (lazyFn) => {
-			this.lazyFn = lazyFn;
-			return this;
-		};
-		this.redirect = (opts) => redirect({
-			from: this.fullPath,
-			...opts
-		});
-		this.options = options || {};
-		this.isRoot = !options?.getParentRoute;
-		if (options?.id && options?.path) throw new Error(`Route cannot have both an 'id' and a 'path' option.`);
-	}
-};
-var BaseRootRoute = class extends BaseRoute {
-	constructor(options) {
-		super(options);
-	}
-};
-//#endregion
-//#region node_modules/seroval/dist/index.js
 var SYM_ASYNC_ITERATOR = Symbol.asyncIterator;
 var SYM_HAS_INSTANCE = Symbol.hasInstance;
 var SYM_IS_CONCAT_SPREADABLE = Symbol.isConcatSpreadable;
@@ -6305,1188 +2808,63 @@ function fromJSON(source, options = {}) {
 		disabledFeatures
 	}), source.t);
 }
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/utils.js
-var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
-/**
-* React.use if available (React 19+), undefined otherwise.
-* Use dynamic lookup to avoid Webpack compilation errors with React 18.
-*/
-var reactUse = import_react.use;
-var useLayoutEffect = import_react.useEffect;
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/CatchBoundary.js
-var import_jsx_runtime = require_jsx_runtime();
-var CatchBoundary = class extends import_react.Component {
-	constructor(..._args) {
-		super(..._args);
-		this.state = { error: 0 };
-		this.reset = () => {
-			this.setState({ error: 0 });
-		};
-	}
-	static getDerivedStateFromProps(props, state) {
-		const resetKey = props.getResetKey();
-		if (state.error && state.resetKey !== resetKey) return {
-			resetKey,
-			error: 0
-		};
-		return { resetKey };
-	}
-	static getDerivedStateFromError(error) {
-		return { error: [error] };
-	}
-	componentDidCatch(error, errorInfo) {
-		this.props.onCatch?.(error, errorInfo);
-	}
-	render() {
-		const error = this.state.error;
-		if (error) return import_react.createElement(this.props.errorComponent ?? ErrorComponent, {
-			error: error[0],
-			reset: this.reset
-		});
-		return this.props.children;
-	}
-};
-function ErrorComponent({ error }) {
-	const [show, setShow] = import_react.useState(false);
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		style: {
-			padding: ".5rem",
-			maxWidth: "100%"
-		},
-		children: [
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				style: {
-					display: "flex",
-					alignItems: "center",
-					gap: ".5rem"
-				},
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("strong", {
-					style: { fontSize: "1rem" },
-					children: "Something went wrong!"
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					style: {
-						appearance: "none",
-						fontSize: ".6em",
-						border: "1px solid currentColor",
-						padding: ".1rem .2rem",
-						fontWeight: "bold",
-						borderRadius: ".25rem"
-					},
-					onClick: () => setShow((d) => !d),
-					children: show ? "Hide Error" : "Show Error"
-				})]
-			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { style: { height: ".25rem" } }),
-			show ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("pre", {
-				style: {
-					fontSize: ".7em",
-					border: "1px solid red",
-					borderRadius: ".25rem",
-					padding: ".3rem",
-					color: "red",
-					overflow: "auto"
-				},
-				children: error?.message ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("code", { children: error.message }) : null
-			}) }) : null
-		]
-	});
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/ClientOnly.js
-var getSnapshot = () => true;
-var getServerSnapshot = () => false;
-/**
-* Render the children only after the JS has loaded client-side. Use an optional
-* fallback component if the JS is not yet loaded.
-*
-* @example
-* Render a Chart component if JS loads, renders a simple FakeChart
-* component server-side or if there is no JS. The FakeChart can have only the
-* UI without the behavior or be a loading spinner or skeleton.
-*
-* ```tsx
-* return (
-*   <ClientOnly fallback={<FakeChart />}>
-*     <Chart />
-*   </ClientOnly>
-* )
-* ```
-*/
-function ClientOnly({ children, fallback = null }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Fragment, { children: useHydrated() ? children : fallback });
-}
-/** @internal */
-function useHydrated(enabled = true) {
-	return import_react.useSyncExternalStore(subscribe, getSnapshot, enabled ? getServerSnapshot : getSnapshot);
-}
-function subscribe() {
-	return () => {};
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/routerContext.js
-var routerContext = import_react.createContext(null);
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useRouter.js
-/**
-* Access the current TanStack Router instance from React context.
-* Must be used within a `RouterProvider`.
-*
-* Options:
-* - `warn`: Log a warning if no router context is found (default: true).
-*
-* @returns The registered router instance.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useRouterHook
-*/
-function useRouter(opts) {
-	const value = import_react.useContext(routerContext);
-	if (!value);
-	return value;
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/matchContext.js
-var matchContext = import_react.createContext(void 0);
-var dummyMatchContext = import_react.createContext(void 0);
-//#endregion
-//#region node_modules/@tanstack/store/dist/alien.js
+/** Create a Seroval plugin for client/server symmetric (de)serialization. */
 /* @__NO_SIDE_EFFECTS__ */
-function createReactiveSystem({ update, notify, unwatched }) {
-	return {
-		link,
-		unlink,
-		propagate,
-		checkDirty,
-		shallowPropagate
-	};
-	function link(dep, sub, version) {
-		const prevDep = sub.depsTail;
-		if (prevDep !== void 0 && prevDep.dep === dep) return;
-		const nextDep = prevDep !== void 0 ? prevDep.nextDep : sub.deps;
-		if (nextDep !== void 0 && nextDep.dep === dep) {
-			nextDep.version = version;
-			sub.depsTail = nextDep;
-			return;
-		}
-		const prevSub = dep.subsTail;
-		if (prevSub !== void 0 && prevSub.version === version && prevSub.sub === sub) return;
-		const newLink = sub.depsTail = dep.subsTail = {
-			version,
-			dep,
-			sub,
-			prevDep,
-			nextDep,
-			prevSub,
-			nextSub: void 0
-		};
-		if (nextDep !== void 0) nextDep.prevDep = newLink;
-		if (prevDep !== void 0) prevDep.nextDep = newLink;
-		else sub.deps = newLink;
-		if (prevSub !== void 0) prevSub.nextSub = newLink;
-		else dep.subs = newLink;
-	}
-	function unlink(link, sub = link.sub) {
-		const dep = link.dep;
-		const prevDep = link.prevDep;
-		const nextDep = link.nextDep;
-		const nextSub = link.nextSub;
-		const prevSub = link.prevSub;
-		if (nextDep !== void 0) nextDep.prevDep = prevDep;
-		else sub.depsTail = prevDep;
-		if (prevDep !== void 0) prevDep.nextDep = nextDep;
-		else sub.deps = nextDep;
-		if (nextSub !== void 0) nextSub.prevSub = prevSub;
-		else dep.subsTail = prevSub;
-		if (prevSub !== void 0) prevSub.nextSub = nextSub;
-		else if ((dep.subs = nextSub) === void 0) unwatched(dep);
-		return nextDep;
-	}
-	function propagate(link) {
-		let next = link.nextSub;
-		let stack;
-		top: do {
-			const sub = link.sub;
-			let flags = sub.flags;
-			if (!(flags & 60)) sub.flags = flags | 32;
-			else if (!(flags & 12)) flags = 0;
-			else if (!(flags & 4)) sub.flags = flags & -9 | 32;
-			else if (!(flags & 48) && isValidLink(link, sub)) {
-				sub.flags = flags | 40;
-				flags &= 1;
-			} else flags = 0;
-			if (flags & 2) notify(sub);
-			if (flags & 1) {
-				const subSubs = sub.subs;
-				if (subSubs !== void 0) {
-					const nextSub = (link = subSubs).nextSub;
-					if (nextSub !== void 0) {
-						stack = {
-							value: next,
-							prev: stack
-						};
-						next = nextSub;
-					}
-					continue;
-				}
+function makeSerovalPlugin(serializationAdapter) {
+	return /* @__PURE__ */ createPlugin({
+		tag: "$TSR/t/" + serializationAdapter.key,
+		test: serializationAdapter.test,
+		parse: {
+			sync(value, ctx) {
+				return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
+			},
+			async async(value, ctx) {
+				return { v: await ctx.parse(serializationAdapter.toSerializable(value)) };
+			},
+			stream(value, ctx) {
+				return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
 			}
-			if ((link = next) !== void 0) {
-				next = link.nextSub;
-				continue;
-			}
-			while (stack !== void 0) {
-				link = stack.value;
-				stack = stack.prev;
-				if (link !== void 0) {
-					next = link.nextSub;
-					continue top;
-				}
-			}
-			break;
-		} while (true);
-	}
-	function checkDirty(link, sub) {
-		let stack;
-		let checkDepth = 0;
-		let dirty = false;
-		top: do {
-			const dep = link.dep;
-			const flags = dep.flags;
-			if (sub.flags & 16) dirty = true;
-			else if ((flags & 17) === 17) {
-				if (update(dep)) {
-					const subs = dep.subs;
-					if (subs.nextSub !== void 0) shallowPropagate(subs);
-					dirty = true;
-				}
-			} else if ((flags & 33) === 33) {
-				if (link.nextSub !== void 0 || link.prevSub !== void 0) stack = {
-					value: link,
-					prev: stack
-				};
-				link = dep.deps;
-				sub = dep;
-				++checkDepth;
-				continue;
-			}
-			if (!dirty) {
-				const nextDep = link.nextDep;
-				if (nextDep !== void 0) {
-					link = nextDep;
-					continue;
-				}
-			}
-			while (checkDepth--) {
-				const firstSub = sub.subs;
-				const hasMultipleSubs = firstSub.nextSub !== void 0;
-				if (hasMultipleSubs) {
-					link = stack.value;
-					stack = stack.prev;
-				} else link = firstSub;
-				if (dirty) {
-					if (update(sub)) {
-						if (hasMultipleSubs) shallowPropagate(firstSub);
-						sub = link.sub;
-						continue;
-					}
-					dirty = false;
-				} else sub.flags &= -33;
-				sub = link.sub;
-				const nextDep = link.nextDep;
-				if (nextDep !== void 0) {
-					link = nextDep;
-					continue top;
-				}
-			}
-			return dirty;
-		} while (true);
-	}
-	function shallowPropagate(link) {
-		do {
-			const sub = link.sub;
-			const flags = sub.flags;
-			if ((flags & 48) === 32) {
-				sub.flags = flags | 16;
-				if ((flags & 6) === 2) notify(sub);
-			}
-		} while ((link = link.nextSub) !== void 0);
-	}
-	function isValidLink(checkLink, sub) {
-		let link = sub.depsTail;
-		while (link !== void 0) {
-			if (link === checkLink) return true;
-			link = link.prevDep;
-		}
-		return false;
-	}
-}
-var queuedEffects = [];
-var { link, unlink, propagate, checkDirty, shallowPropagate } = /* @__PURE__ */ createReactiveSystem({
-	update(atom) {
-		return atom._update();
-	},
-	notify(effect) {
-		queuedEffects[queuedEffectsLength++] = effect;
-		effect.flags &= -3;
-	},
-	unwatched(atom) {
-		if (atom.depsTail !== void 0) {
-			atom.depsTail = void 0;
-			atom.flags = 17;
-			purgeDeps(atom);
-		}
-	}
-});
-var queuedEffectsLength = 0;
-function purgeDeps(sub) {
-	const depsTail = sub.depsTail;
-	let dep = depsTail !== void 0 ? depsTail.nextDep : sub.deps;
-	while (dep !== void 0) dep = unlink(dep, sub);
-}
-//#endregion
-//#region node_modules/use-sync-external-store/cjs/use-sync-external-store-shim.production.js
-/**
-* @license React
-* use-sync-external-store-shim.production.js
-*
-* Copyright (c) Meta Platforms, Inc. and affiliates.
-*
-* This source code is licensed under the MIT license found in the
-* LICENSE file in the root directory of this source tree.
-*/
-var require_use_sync_external_store_shim_production = /* @__PURE__ */ __commonJSMin(((exports) => {
-	var React = require_react();
-	function is(x, y) {
-		return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
-	}
-	var objectIs = "function" === typeof Object.is ? Object.is : is;
-	var useState = React.useState;
-	var useEffect = React.useEffect;
-	var useLayoutEffect = React.useLayoutEffect;
-	var useDebugValue = React.useDebugValue;
-	function useSyncExternalStore$2(subscribe, getSnapshot) {
-		var value = getSnapshot(), _useState = useState({ inst: {
-			value,
-			getSnapshot
-		} }), inst = _useState[0].inst, forceUpdate = _useState[1];
-		useLayoutEffect(function() {
-			inst.value = value;
-			inst.getSnapshot = getSnapshot;
-			checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-		}, [
-			subscribe,
-			value,
-			getSnapshot
-		]);
-		useEffect(function() {
-			checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-			return subscribe(function() {
-				checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-			});
-		}, [subscribe]);
-		useDebugValue(value);
-		return value;
-	}
-	function checkIfSnapshotChanged(inst) {
-		var latestGetSnapshot = inst.getSnapshot;
-		inst = inst.value;
-		try {
-			var nextValue = latestGetSnapshot();
-			return !objectIs(inst, nextValue);
-		} catch (error) {
-			return !0;
-		}
-	}
-	function useSyncExternalStore$1(subscribe, getSnapshot) {
-		return getSnapshot();
-	}
-	var shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
-	exports.useSyncExternalStore = void 0 !== React.useSyncExternalStore ? React.useSyncExternalStore : shim;
-}));
-//#endregion
-//#region node_modules/use-sync-external-store/shim/index.js
-var require_shim = /* @__PURE__ */ __commonJSMin(((exports, module) => {
-	module.exports = require_use_sync_external_store_shim_production();
-}));
-//#endregion
-//#region node_modules/use-sync-external-store/cjs/use-sync-external-store-shim/with-selector.production.js
-/**
-* @license React
-* use-sync-external-store-shim/with-selector.production.js
-*
-* Copyright (c) Meta Platforms, Inc. and affiliates.
-*
-* This source code is licensed under the MIT license found in the
-* LICENSE file in the root directory of this source tree.
-*/
-var require_with_selector_production = /* @__PURE__ */ __commonJSMin(((exports) => {
-	var React = require_react();
-	var shim = require_shim();
-	function is(x, y) {
-		return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
-	}
-	var objectIs = "function" === typeof Object.is ? Object.is : is;
-	var useSyncExternalStore = shim.useSyncExternalStore;
-	var useRef = React.useRef;
-	var useEffect = React.useEffect;
-	var useMemo = React.useMemo;
-	var useDebugValue = React.useDebugValue;
-	exports.useSyncExternalStoreWithSelector = function(subscribe, getSnapshot, getServerSnapshot, selector, isEqual) {
-		var instRef = useRef(null);
-		if (null === instRef.current) {
-			var inst = {
-				hasValue: !1,
-				value: null
-			};
-			instRef.current = inst;
-		} else inst = instRef.current;
-		instRef = useMemo(function() {
-			function memoizedSelector(nextSnapshot) {
-				if (!hasMemo) {
-					hasMemo = !0;
-					memoizedSnapshot = nextSnapshot;
-					nextSnapshot = selector(nextSnapshot);
-					if (void 0 !== isEqual && inst.hasValue) {
-						var currentSelection = inst.value;
-						if (isEqual(currentSelection, nextSnapshot)) return memoizedSelection = currentSelection;
-					}
-					return memoizedSelection = nextSnapshot;
-				}
-				currentSelection = memoizedSelection;
-				if (objectIs(memoizedSnapshot, nextSnapshot)) return currentSelection;
-				var nextSelection = selector(nextSnapshot);
-				if (void 0 !== isEqual && isEqual(currentSelection, nextSelection)) return memoizedSnapshot = nextSnapshot, currentSelection;
-				memoizedSnapshot = nextSnapshot;
-				return memoizedSelection = nextSelection;
-			}
-			var hasMemo = !1, memoizedSnapshot, memoizedSelection, maybeGetServerSnapshot = void 0 === getServerSnapshot ? null : getServerSnapshot;
-			return [function() {
-				return memoizedSelector(getSnapshot());
-			}, null === maybeGetServerSnapshot ? void 0 : function() {
-				return memoizedSelector(maybeGetServerSnapshot());
-			}];
-		}, [
-			getSnapshot,
-			getServerSnapshot,
-			selector,
-			isEqual
-		]);
-		var value = useSyncExternalStore(subscribe, instRef[0], instRef[1]);
-		useEffect(function() {
-			inst.hasValue = !0;
-			inst.value = value;
-		}, [value]);
-		useDebugValue(value);
-		return value;
-	};
-}));
-(/* @__PURE__ */ __commonJSMin(((exports, module) => {
-	module.exports = require_with_selector_production();
-})))();
-/**
-* Read and select the nearest or targeted route match.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useMatchHook
-*/
-function useMatch(opts) {
-	const router = useRouter();
-	const nearestRouteId = import_react.useContext(opts.from ? dummyMatchContext : matchContext);
-	const routeId = opts.from ?? nearestRouteId;
-	const matchStore = router.stores.getMatchStore(routeId);
-	{
-		const match = matchStore.get();
-		if (!match) {
-			if (opts.shouldThrow ?? true) invariant();
-			return;
-		}
-		return opts.select ? opts.select(match) : match;
-	}
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useLoaderData.js
-/**
-* Read and select the current route's loader data with type‑safety.
-*
-* Options:
-* - `from`/`strict`: Choose which route's data to read and strictness
-* - `select`: Map the loader data to a derived value
-* - `structuralSharing`: Enable structural sharing for stable references
-*
-* @returns The loader data (or selected value) for the matched route.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useLoaderDataHook
-*/
-function useLoaderData(opts) {
-	return useMatch({
-		from: opts.from,
-		strict: opts.strict,
-		structuralSharing: opts.structuralSharing,
-		select: (match) => {
-			return opts.select ? opts.select(match.loaderData) : match.loaderData;
+		},
+		serialize: void 0,
+		deserialize(node, ctx) {
+			return serializationAdapter.fromSerializable(ctx.deserialize(node.v));
 		}
 	});
 }
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useLoaderDeps.js
 /**
-* Read and select the current route's loader dependencies object.
+* Marker class for ReadableStream<Uint8Array> that should be serialized
+* with base64/text encoding (JSON and SSR) or binary framing
+* (server-function responses).
 *
-* Options:
-* - `from`: Choose which route's loader deps to read
-* - `select`: Map the deps to a derived value
-* - `structuralSharing`: Enable structural sharing for stable references
+* Wrap your binary streams with this to get efficient serialization:
+* ```ts
+* // For binary data (files, images, etc.)
+* return { data: new RawStream(file.stream()) }
 *
-* @returns The loader deps (or selected value) for the matched route.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useLoaderDepsHook
+* // For text-heavy data (RSC payloads, etc.)
+* return { data: new RawStream(rscStream, { hint: 'text' }) }
+* ```
+*
+* RawStreams returned from one server function share one ordered response.
+* Arbitrary or sequential consumption can require potentially unbounded client
+* buffering for unread data. Cancelling one RawStream discards it locally;
+* abort the whole server-function call to cancel the response and server work.
+* Consume streams concurrently, cancel unused streams promptly, or use separate
+* calls when independent backpressure is required.
 */
-function useLoaderDeps(opts) {
-	const { select, ...rest } = opts;
-	return useMatch({
-		...rest,
-		select: (match) => {
-			return select ? select(match.loaderDeps) : match.loaderDeps;
-		}
-	});
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useParams.js
-/**
-* Access the current route's path parameters with type-safety.
-*
-* Options:
-* - `from`/`strict`: Specify the matched route and whether to enforce strict typing
-* - `select`: Project the params object to a derived value for memoized renders
-* - `structuralSharing`: Enable structural sharing for stable references
-* - `shouldThrow`: Throw if the route is not found in strict contexts
-*
-* @returns The params object (or selected value) for the matched route.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useParamsHook
-*/
-function useParams(opts) {
-	return useMatch({
-		from: opts.from,
-		shouldThrow: opts.shouldThrow,
-		structuralSharing: opts.structuralSharing,
-		strict: opts.strict,
-		select: (match) => {
-			const params = opts.strict === false ? match.params : match._strictParams;
-			return opts.select ? opts.select(params) : params;
-		}
-	});
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useSearch.js
-/**
-* Read and select the current route's search parameters with type-safety.
-*
-* Options:
-* - `from`/`strict`: Control which route's search is read and how strictly it's typed
-* - `select`: Map the search object to a derived value for render optimization
-* - `structuralSharing`: Enable structural sharing for stable references
-* - `shouldThrow`: Throw when the route is not found (strict contexts)
-*
-* @returns The search object (or selected value) for the matched route.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useSearchHook
-*/
-function useSearch(opts) {
-	return useMatch({
-		from: opts.from,
-		strict: opts.strict,
-		shouldThrow: opts.shouldThrow,
-		structuralSharing: opts.structuralSharing,
-		select: (match) => {
-			return opts.select ? opts.select(match.search) : match.search;
-		}
-	});
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useNavigate.js
-/**
-* Imperative navigation hook.
-*
-* Returns a stable `navigate(options)` function to change the current location
-* programmatically. Prefer the `Link` component for user-initiated navigation,
-* and use this hook from effects, callbacks, or handlers where imperative
-* navigation is required.
-*
-* Options:
-* - `from`: Optional route base used to resolve relative `to` paths.
-*
-* @returns A function that accepts `NavigateOptions`.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/useNavigateHook
-*/
-function useNavigate(_defaultOpts) {
-	const router = useRouter();
-	return import_react.useCallback((options) => {
-		return router.navigate({
-			...options,
-			from: options.from ?? _defaultOpts?.from
-		});
-	}, [_defaultOpts?.from, router]);
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/useRouteContext.js
-function useRouteContext(opts) {
-	return useMatch({
-		...opts,
-		select: (match) => opts.select ? opts.select(match.context) : match.context
-	});
-}
-function resolveExternalLink(to, protocolAllowlist) {
-	const scheme = typeof to === "string" && getUrlScheme(to);
-	if (!scheme) return;
-	if (!protocolAllowlist.has(scheme)) return null;
-	return to;
-}
-function resolveIsActive(location, next, activeOptions, basepath, isHydrated) {
-	const currentPath = removeTrailingSlash(location.pathname, basepath);
-	const nextPath = removeTrailingSlash(next.pathname, basepath);
-	if (activeOptions?.exact ? currentPath !== nextPath : !(currentPath.startsWith(nextPath) && (currentPath.length === nextPath.length || currentPath[nextPath.length] === "/"))) return false;
-	if (activeOptions?.includeSearch ?? true) {
-		if (!deepEqual(location.search, next.search, !activeOptions?.exact, activeOptions?.explicitUndefined)) return false;
-	}
-	if (activeOptions?.includeHash) return isHydrated && location.hash === next.hash;
-	return true;
-}
-function useLinkProps(options, forwardedRef, host) {
-	return getServerLinkProps(useRouter(), options, forwardedRef, host);
-}
-var STATIC_EMPTY_OBJECT = {};
-var STATIC_ACTIVE_OBJECT = { className: "active" };
-var ROUTER_OPTION_KEYS = /* @__PURE__ */ new Set([
-	"to",
-	"params",
-	"search",
-	"hash",
-	"state",
-	"mask",
-	"from",
-	"unsafeRelative",
-	"_fromLocation",
-	"reloadDocument",
-	"preload",
-	"preloadDelay",
-	"preloadIntentProximity",
-	"hashScrollIntoView",
-	"replace",
-	"startTransition",
-	"resetScroll",
-	"viewTransition",
-	"ignoreBlocker",
-	"activeProps",
-	"inactiveProps",
-	"activeOptions",
-	"_asChild"
-]);
-function collectElementProps(options, host) {
-	const props = {};
-	for (const key in options) {
-		if (ROUTER_OPTION_KEYS.has(key) || key === "type" && host !== void 0 || key === "disabled" && host === "a") continue;
-		props[key] = options[key];
-	}
-	return props;
-}
-function applyLinkState(props, options, isActive, href, linkDisabled, host) {
-	const { activeProps, inactiveProps, className, style, target } = options;
-	const stateProps = functionalUpdate(isActive ? activeProps : inactiveProps, {}) ?? (isActive ? STATIC_ACTIVE_OBJECT : STATIC_EMPTY_OBJECT);
-	Object.assign(props, stateProps);
-	props.href = href;
-	if (host !== "a") props.disabled = linkDisabled;
-	props.target = target;
-	const stateStyle = stateProps.style;
-	if (style || stateStyle) props.style = style && stateStyle ? {
-		...style,
-		...stateStyle
-	} : style || stateStyle;
-	const stateClassName = stateProps.className;
-	if (className || stateClassName) props.className = className ? stateClassName ? `${className} ${stateClassName}` : className : stateClassName;
-	if (linkDisabled) {
-		props.role = "link";
-		props["aria-disabled"] = true;
-	}
-	if (isActive) {
-		props["data-status"] = "active";
-		props["aria-current"] = "page";
-	}
-	return props;
-}
-function getServerLinkProps(router, options, forwardedRef, host) {
-	const { to, disabled, activeOptions } = options;
-	const directExternalLink = resolveExternalLink(to, router.protocolAllowlist);
-	const next = directExternalLink === void 0 ? router.buildLocation(options) : void 0;
-	const hrefOption = next ? getHrefOption(next, router, disabled) : directExternalLink ?? void 0;
-	const linkDisabled = disabled || !hrefOption;
-	const externalLink = directExternalLink ?? (hrefOption && getUrlScheme(hrefOption) ? hrefOption : void 0);
-	const props = collectElementProps(options, host);
-	props.ref = forwardedRef;
-	if (externalLink) {
-		props.href = externalLink;
-		return props;
-	}
-	return applyLinkState(props, options, !!next && !(!disabled && !hrefOption) && resolveIsActive(router.stores.location.get(), next, activeOptions, router.basepath, false), hrefOption, linkDisabled, host);
-}
-function getHrefOption(next, router, disabled) {
-	if (disabled) return;
-	const location = next.maskedLocation ?? next;
-	const href = location.external ? location.publicHref : router.history.createHref(location.publicHref) || "/";
-	if ((location.external || href !== location.publicHref) && isDangerousProtocol(href, router.protocolAllowlist)) return;
-	return href;
-}
-/**
-* A strongly-typed anchor component for declarative navigation.
-* Handles path, search, hash and state updates with optional route preloading
-* and active-state styling.
-*
-* Props:
-* - `preload`: Controls route preloading (eg. 'intent', 'render', 'viewport', true/false)
-* - `preloadDelay`: Delay in ms before preloading on focus, hover, or viewport entry
-* - `activeProps`/`inactiveProps`: Additional props merged when link is active/inactive
-* - `resetScroll`/`hashScrollIntoView`: Control scroll behavior on navigation
-* - `viewTransition`/`startTransition`: Use View Transitions/React transitions for navigation
-* - `ignoreBlocker`: Bypass registered blockers
-*
-* @returns An anchor-like element that navigates without full page reloads.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/linkComponent
-*/
-var Link = import_react.memo(import_react.forwardRef((props, ref) => {
-	const host = props._asChild || "a";
-	const linkProps = useLinkProps(props, ref, host);
-	const children = typeof props.children === "function" ? props.children({ isActive: linkProps["data-status"] === "active" }) : props.children;
-	return import_react.createElement(host, linkProps, children);
-}), areLinkPropsEqual);
-function areLinkPropsEqual(prev, next) {
-	let extraKeys = 0;
-	for (const key in next) {
-		extraKeys++;
-		if (prev[key] === next[key]) continue;
-		if (!ROUTER_OPTION_KEYS.has(key) || !deepEqual(prev[key], next[key], false, true)) return false;
-	}
-	for (const _key in prev) extraKeys--;
-	return extraKeys === 0;
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/route.js
-var Route = class extends BaseRoute {
-	/**
-	* @deprecated Use the `createRoute` function instead.
-	*/
-	constructor(options) {
-		super(options);
-		this.useMatch = (opts) => {
-			return useMatch({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useRouteContext = (opts) => {
-			return useRouteContext({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useSearch = (opts) => {
-			return useSearch({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useParams = (opts) => {
-			return useParams({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useLoaderDeps = (opts) => {
-			return useLoaderDeps({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useLoaderData = (opts) => {
-			return useLoaderData({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useNavigate = () => {
-			return useNavigate({ from: this.fullPath });
-		};
-		this.Link = import_react.forwardRef((props, ref) => {
-			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-				ref,
-				from: this.fullPath,
-				...props
-			});
-		});
+var RawStream = class {
+	constructor(stream, options) {
+		this.stream = stream;
+		this.hint = options?.hint ?? "binary";
 	}
 };
-/**
-* Creates a non-root Route instance for code-based routing.
-*
-* Use this to define a route that will be composed into a route tree
-* (typically via a parent route's `addChildren`). If you're using file-based
-* routing, prefer `createFileRoute`.
-*
-* @param options Route options (path, component, loader, context, etc.).
-* @returns A Route instance to be attached to the route tree.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouteFunction
-*/
-function createRoute(options) {
-	return new Route(options);
-}
-/**
-* Creates a root route factory that requires a router context type.
-*
-* Use when your root route expects `context` to be provided to `createRouter`.
-* The returned function behaves like `createRootRoute` but enforces a context type.
-*
-* @returns A factory function to configure and return a root route.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRootRouteWithContextFunction
-*/
-function createRootRouteWithContext() {
-	return (options) => {
-		return createRootRoute(options);
-	};
-}
-var RootRoute = class extends BaseRootRoute {
-	/**
-	* @deprecated `RootRoute` is now an internal implementation detail. Use `createRootRoute()` instead.
-	*/
-	constructor(options) {
-		super(options);
-		this.useMatch = (opts) => {
-			return useMatch({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useRouteContext = (opts) => {
-			return useRouteContext({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useSearch = (opts) => {
-			return useSearch({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useParams = (opts) => {
-			return useParams({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useLoaderDeps = (opts) => {
-			return useLoaderDeps({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useLoaderData = (opts) => {
-			return useLoaderData({
-				...opts,
-				from: this.id
-			});
-		};
-		this.useNavigate = () => {
-			return useNavigate({ from: this.fullPath });
-		};
-		this.Link = import_react.forwardRef((props, ref) => {
-			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-				ref,
-				from: this.fullPath,
-				...props
-			});
-		});
-	}
-};
-/**
-* Creates a root Route instance used to build your route tree.
-*
-* Typically paired with `createRouter({ routeTree })`. If you need to require
-* a typed router context, use `createRootRouteWithContext` instead.
-*
-* @param options Root route options (component, error, pending, etc.).
-* @returns A root route instance.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRootRouteFunction
-*/
-function createRootRoute(options) {
-	return new RootRoute(options);
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/fileRoute.js
-/**
-* Creates a file-based Route factory for a given path.
-*
-* Used by TanStack Router's file-based routing to associate a file with a
-* route. The returned function accepts standard route options. In normal usage
-* the `path` string is inserted and maintained by the `tsr` generator.
-*
-* @param path File path literal for the route (usually auto-generated).
-* @returns A function that accepts Route options and returns a Route instance.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createFileRouteFunction
-*/
-function createFileRoute(path) {
-	return (options) => {
-		const route = createRoute(options);
-		route.isRoot = false;
-		return route;
-	};
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/lazyRouteComponent.js
-/**
-* Wrap a dynamic import to create a route component that supports
-* `.preload()` and friendly reload-on-module-missing behavior.
-*
-* @param importer Function returning a module promise
-* @param exportName Named export to use (default: `default`)
-* @returns A lazy route component compatible with TanStack Router
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/lazyRouteComponentFunction
-*/
-function lazyRouteComponent(importer, exportName) {
-	let loadPromise;
-	let comp;
-	let error;
-	const load = () => {
-		if (!loadPromise) {
-			error = void 0;
-			loadPromise = importer().then((res) => {
-				comp = res[exportName ?? "default"];
-			}).catch((err) => {
-				loadPromise = void 0;
-				error = err;
-			});
-		}
-		return loadPromise;
-	};
-	const lazyComp = function Lazy(props) {
-		if (error) {
-			if (isModuleNotFoundError(error) && false);
-			throw error;
-		}
-		if (!comp) if (reactUse) reactUse(load());
-		else throw load();
-		return import_react.createElement(comp, props);
-	};
-	lazyComp.preload = load;
-	return lazyComp;
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/not-found.js
-function CatchNotFound(props) {
-	const router = useRouter();
-	{
-		const resetKey = `not-found-${router.stores.location.get().pathname}-${router.stores.status.get()}`;
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CatchBoundary, {
-			getResetKey: () => resetKey,
-			onCatch: (error, errorInfo) => {
-				if (isNotFound(error)) props.onCatch?.(error, errorInfo);
-				else throw error;
-			},
-			errorComponent: ({ error }) => {
-				if (isNotFound(error)) return props.fallback?.(error);
-				else throw error;
-			},
-			children: props.children
-		});
-	}
-}
-function DefaultGlobalNotFound() {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { children: "Not Found" });
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/ScriptOnce.js
-/**
-* Server-only helper to emit a script tag exactly once during SSR.
-*/
-function ScriptOnce({ children }) {
-	const router = useRouter();
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
-		nonce: router.options.ssr?.nonce,
-		dangerouslySetInnerHTML: { __html: children + ";document.currentScript.remove()" }
-	});
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/renderRouteNotFound.js
-/**
-* Renders a not found component for a route when no matching route is found.
-*
-* @param router - The router instance containing the route configuration
-* @param route - The route that triggered the not found state
-* @param data - Additional data to pass to the not found component
-* @returns The rendered not found component or a default fallback component
-*/
-function renderRouteNotFound(router, route, data) {
-	if (!route.options.notFoundComponent) {
-		if (router.options.defaultNotFoundComponent) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(router.options.defaultNotFoundComponent, { ...data });
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DefaultGlobalNotFound, {});
-	}
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(route.options.notFoundComponent, { ...data });
-}
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/scroll-restoration-inline.js
-var scroll_restoration_inline_default = "function(a,f){let l;try{l=JSON.parse(sessionStorage.getItem(a)||\"{}\")}catch{return}const n=l?.[f||history.state?.__TSR_key];let c=!1;for(const t in n){const e=n[t],o=e?.scrollX,s=e?.scrollY;if(Number.isFinite(o)&&Number.isFinite(s)){if(t===\"window\")scrollTo(o,s),c=!0;else if(t)try{const r=document.querySelector(t);r&&(r.scrollLeft=o,r.scrollTop=s)}catch{}}}if(c)return;const i=location.hash.slice(1);if(i){const t=history.state?.__hashScrollIntoViewOptions??!0;if(t){const e=document.getElementById(i);e&&e.scrollIntoView(t)}return}scrollTo(0,0)}";
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/scroll-restoration-script/server.js
-var defaultInlineScrollRestorationScript = `(${scroll_restoration_inline_default})(${escapeHtml(JSON.stringify(storageKey))})`;
-function getScrollRestorationScript(key) {
-	if (key === void 0) return defaultInlineScrollRestorationScript;
-	return `(${scroll_restoration_inline_default})(${escapeHtml(JSON.stringify(storageKey))},${escapeHtml(JSON.stringify(key))})`;
-}
-function getScrollRestorationScriptForRouter(router) {
-	if (typeof router.options.scrollRestoration === "function" && !router.options.scrollRestoration({ location: router.latestLocation })) return null;
-	const getKey = router.options.getScrollRestorationKey;
-	if (!getKey) return defaultInlineScrollRestorationScript;
-	const location = router.latestLocation;
-	const userKey = getKey(location);
-	if (userKey === defaultGetScrollRestorationKey(location)) return defaultInlineScrollRestorationScript;
-	return getScrollRestorationScript(userKey);
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/scroll-restoration.js
-function ScrollRestoration() {
-	const script = getScrollRestorationScriptForRouter(useRouter());
-	if (!script) return null;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScriptOnce, { children: script });
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/Match.js
-function renderPending(router, route) {
-	const PendingComponent = route?.options.pendingComponent ?? router.options.defaultPendingComponent;
-	if (!PendingComponent) return null;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PendingComponent, {});
-}
-var canWrapInSuspense = (router, route, ssr) => !route.isRoot || route.options.shellComponent || route.options.wrapInSuspense || ssr === false || ssr === "data-only" || false;
-var Match = import_react.memo(function MatchImpl({ routeId }) {
-	const router = useRouter();
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MatchView, {
-		router,
-		match: router.stores.byRoute.get(routeId).get()
-	});
-});
-function MatchView({ router, match }) {
-	const route = router.routesById[match.routeId];
-	const pendingElement = renderPending(router, route);
-	const routeErrorComponent = route.options.errorComponent ?? router.options.defaultErrorComponent;
-	const routeOnCatch = route.options.onCatch ?? router.options.defaultOnCatch;
-	const routeNotFoundComponent = route.isRoot ? route.options.notFoundComponent ?? router.options.notFoundRoute?.options.component : route.options.notFoundComponent;
-	const resolvedNoSsr = match.ssr === false || match.ssr === "data-only";
-	const wrapInSuspense = canWrapInSuspense(router, route, match.ssr) && (route.options.wrapInSuspense ?? pendingElement ?? (route.options.errorComponent?.preload || resolvedNoSsr));
-	let content = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MatchInner, { match });
-	if (resolvedNoSsr) content = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ClientOnly, {
-		fallback: pendingElement,
-		children: content
-	});
-	if (routeNotFoundComponent) content = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CatchNotFound, {
-		fallback: (error) => {
-			error.routeId ??= match.routeId;
-			if (error.routeId !== match.routeId) throw error;
-			return import_react.createElement(routeNotFoundComponent, error);
-		},
-		children: content
-	});
-	if (routeErrorComponent) content = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CatchBoundary, {
-		getResetKey: () => match,
-		errorComponent: routeErrorComponent,
-		onCatch: (error, errorInfo) => {
-			if (isNotFound(error)) {
-				error.routeId ??= match.routeId;
-				throw error;
-			}
-			routeOnCatch?.(error, errorInfo);
-		},
-		children: content
-	});
-	if (wrapInSuspense) content = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Suspense, {
-		fallback: pendingElement,
-		children: content
-	});
-	const scrollRestoration = route.parentRoute?.id === "__root__" && router.options.scrollRestoration ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScrollRestoration, {}) : null;
-	const ShellComponent = route.isRoot ? route.options.shellComponent : void 0;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(matchContext.Provider, {
-		value: match.routeId,
-		children: ShellComponent ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(ShellComponent, { children: [content, scrollRestoration] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [content, scrollRestoration] })
-	});
-}
-var MatchInner = import_react.memo(function MatchInnerImpl({ match }) {
-	const router = useRouter();
-	const routeId = match.routeId;
-	const route = router.routesById[routeId];
-	const key = import_react.useMemo(() => {
-		const remountDeps = (route.options.remountDeps ?? router.options.defaultRemountDeps)?.({
-			routeId,
-			loaderDeps: match.loaderDeps,
-			params: match._strictParams,
-			search: match._strictSearch
-		});
-		return remountDeps ? JSON.stringify(remountDeps) : void 0;
-	}, [
-		routeId,
-		match.loaderDeps,
-		match._strictParams,
-		match._strictSearch,
-		route.options.remountDeps,
-		router.options.defaultRemountDeps
-	]);
-	const out = import_react.useMemo(() => {
-		const Comp = route.options.component ?? router.options.defaultComponent;
-		return Comp ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Comp, {}, key) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Outlet, {});
-	}, [
-		key,
-		route.options.component,
-		router.options.defaultComponent
-	]);
-	if (match.status === "pending") {
-		if (router.ssr && !canWrapInSuspense(router, route, match.ssr)) return out;
-		if (router._tx) throw router._tx[5];
-		return renderPending(router, route);
-	}
-	if (match.status === "notFound") return renderRouteNotFound(router, route, match.error);
-	if (match.status === "error") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)((route.options.errorComponent ?? router.options.defaultErrorComponent) || ErrorComponent, {
-		error: match.error,
-		reset: void 0,
-		info: { componentStack: "" }
-	});
-	return out;
-});
-/**
-* Render the next child match in the route tree. Typically used inside
-* a route component to render nested routes.
-*
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/outletComponent
-*/
-var Outlet = import_react.memo(function OutletImpl() {
-	const router = useRouter();
-	const routeId = import_react.useContext(matchContext);
-	let parentGlobalNotFound;
-	let parentNotFoundError;
-	let childRouteId;
-	{
-		const matches = router.stores.matches.get();
-		const parentIndex = matches.findIndex((match) => match.routeId === routeId);
-		const parentMatch = matches[parentIndex];
-		parentGlobalNotFound = !!parentMatch._notFound;
-		parentNotFoundError = parentMatch.error;
-		childRouteId = matches[parentIndex + 1]?.routeId;
-	}
-	if (parentGlobalNotFound) return renderRouteNotFound(router, router.routesById[routeId], parentNotFoundError);
-	if (!childRouteId) return null;
-	const nextMatch = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Match, { routeId: childRouteId });
-	if (routeId === "__root__") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Suspense, {
-		fallback: renderPending(router),
-		children: nextMatch
-	});
-	return nextMatch;
-});
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/Transitioner.js
+require_react();
 function settleOwner(owner, rendered) {
 	const settle = owner[1];
 	owner.length = 0;
 	settle?.(rendered);
 }
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/Matches.js
+var import_jsx_runtime = require_jsx_runtime();
 /**
 * Internal component that renders the router's active match tree with
 * suspense, error, and not-found boundaries. Rendered by `RouterProvider`.
@@ -7514,38 +2892,6 @@ function MatchesInner() {
 		children: matchComponent
 	});
 }
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/routerStores.js
-var getStoreFactory = (opts) => {
-	return {
-		createMutableStore: createNonReactiveMutableStore,
-		createReadonlyStore: createNonReactiveReadonlyStore,
-		batch: (fn) => fn()
-	};
-};
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/router.js
-/**
-* Creates a new Router instance for React.
-*
-* Pass the returned router to `RouterProvider` to enable routing.
-* Notable options: `routeTree` (your route definitions) and `context`
-* (required if the root route was created with `createRootRouteWithContext`).
-*
-* @param options Router options used to configure the router.
-* @returns A Router instance to be provided to `RouterProvider`.
-* @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
-*/
-var createRouter = (options) => {
-	return new Router(options);
-};
-var Router = class extends RouterCore {
-	constructor(options) {
-		super(options, getStoreFactory);
-	}
-};
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/RouterProvider.js
 /**
 * Low-level provider that places the router into React context and optionally
 * updates router options from props. Most apps should use `RouterProvider`.
@@ -7582,292 +2928,364 @@ function RouterProvider({ router, ...rest }) {
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Matches, {})
 	});
 }
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/Asset.js
-var noopScriptHandler = () => {};
-function setScriptAttrs(script, attrs) {
-	if (!attrs) return;
-	for (const [key, value] of Object.entries(attrs)) if (key !== "suppressHydrationWarning" && value !== void 0 && value !== false) script.setAttribute(key, typeof value === "boolean" ? "" : String(value));
+function StartServer(props) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RouterProvider, { router: props.router });
 }
-function Asset(asset) {
-	const { attrs, children, nonce, preventScriptHoist } = asset;
-	const innerHTML = import_react.useMemo(() => children === void 0 ? void 0 : { __html: children }, [children]);
-	switch (asset.tag) {
-		case "title": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("title", {
-			...attrs,
-			suppressHydrationWarning: true,
-			children
-		});
-		case "meta": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("meta", {
-			...attrs,
-			suppressHydrationWarning: true
-		});
-		case "link": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("link", {
-			...attrs,
-			precedence: attrs?.precedence ?? (attrs?.rel === "stylesheet" ? "default" : void 0),
-			nonce,
-			suppressHydrationWarning: true
-		});
-		case "style":
-			if (asset.inlineCss && false);
-			return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", {
-				...attrs,
-				dangerouslySetInnerHTML: innerHTML,
-				nonce
-			});
-		case "script": return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Script, {
-			attrs,
-			preventScriptHoist,
-			children
-		});
-		default: return null;
+/**
+* this plugin serializes only the `message` part of an Error
+* this helps with serializing e.g. a ZodError which has functions attached that cannot be serialized
+*/
+var ShallowErrorPlugin = /* @__PURE__ */ createPlugin({
+	tag: "$TSR/Error",
+	test(value) {
+		return value instanceof Error;
+	},
+	parse: {
+		sync(value, ctx) {
+			return { message: ctx.parse(value.message) };
+		},
+		async async(value, ctx) {
+			return { message: await ctx.parse(value.message) };
+		},
+		stream(value, ctx) {
+			return { message: ctx.parse(value.message) };
+		}
+	},
+	serialize(node, ctx) {
+		return "new Error(" + ctx.serialize(node.message) + ")";
+	},
+	deserialize(node, ctx) {
+		return new Error(ctx.deserialize(node.message));
+	}
+});
+function toBase64(bytes) {
+	const chunks = [];
+	for (let i = 0; i < bytes.length; i += 32768) chunks.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 32768)));
+	return btoa(chunks.join(""));
+}
+function fromBase64(value) {
+	const binary = atob(value);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes;
+}
+var textDecoder = /* @__PURE__ */ new TextDecoder("utf-8", {
+	fatal: true,
+	ignoreBOM: true
+});
+/** `'t' + utf8` for a valid UTF-8 chunk, otherwise `'b' + base64`. */
+function encodeText(value) {
+	try {
+		return "t" + textDecoder.decode(value);
+	} catch {
+		return "b" + toBase64(value);
 	}
 }
-function Script({ attrs, children, preventScriptHoist }) {
-	useRouter();
-	useHydrated();
-	const innerHTML = import_react.useMemo(() => children === void 0 ? void 0 : { __html: children }, [children]);
-	const dataScript = typeof attrs?.type === "string" && attrs.type !== "" && attrs.type !== "text/javascript" && attrs.type !== "module";
-	import_react.useEffect(() => {
-		if (dataScript) return;
-		if (attrs?.src) {
-			const link = document.createElement("a");
-			link.href = attrs.src;
-			const normSrc = link.href;
-			for (const el of document.scripts) if (el.src === normSrc) return;
-			const script = document.createElement("script");
-			setScriptAttrs(script, attrs);
-			document.head.appendChild(script);
-			return () => script.remove();
-		}
-		if (typeof children === "string") {
-			const typeAttr = typeof attrs?.type === "string" ? attrs.type : "text/javascript";
-			const nonceAttr = typeof attrs?.nonce === "string" ? attrs.nonce : void 0;
-			for (const el of document.scripts) {
-				if (el.hasAttribute("src")) continue;
-				const sType = el.getAttribute("type") ?? "text/javascript";
-				const sNonce = el.getAttribute("nonce") ?? void 0;
-				if (el.textContent === children && sType === typeAttr && sNonce === nonceAttr) return;
+var textEncoder$3 = /* @__PURE__ */ new TextEncoder();
+function decodeText(value) {
+	const data = value.slice(1);
+	return value[0] === "t" ? textEncoder$3.encode(data) : fromBase64(data);
+}
+/**
+* Pump a byte stream into a Seroval stream, one encoded chunk per read.
+* Returns the Seroval stream and a `stop` function that cancels the reader
+* without signalling the Seroval stream; the abort signal and read failures
+* stop the pump and throw through the Seroval stream.
+*/
+function pumpEncodedStream(readable, encode, signal) {
+	signal?.throwIfAborted();
+	const stream = createStream();
+	const reader = readable.getReader();
+	let active = true;
+	const release = () => {
+		active = false;
+		signal?.removeEventListener("abort", abort);
+		reader.releaseLock();
+	};
+	const stop = (reason) => {
+		if (!active) return false;
+		reader.cancel(reason).catch(() => {});
+		release();
+		return true;
+	};
+	const abort = () => {
+		if (stop(signal.reason)) stream.throw(signal.reason);
+	};
+	signal?.addEventListener("abort", abort);
+	(async () => {
+		try {
+			while (active) {
+				const { done, value } = await reader.read();
+				if (!active) return;
+				if (done) {
+					release();
+					stream.return(void 0);
+					return;
+				}
+				stream.next(encode(value));
 			}
-			const script = document.createElement("script");
-			script.textContent = children;
-			setScriptAttrs(script, attrs);
-			document.head.appendChild(script);
-			return () => script.remove();
+		} catch (error) {
+			if (stop(error)) stream.throw(error);
 		}
-	}, [
-		attrs,
-		children,
-		dataScript
-	]);
-	if (attrs?.src) {
-		if (!preventScriptHoist) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
-			...attrs,
-			suppressHydrationWarning: true
-		});
-		return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
-			...attrs,
-			onLoad: noopScriptHandler,
-			suppressHydrationWarning: true
-		});
-	}
-	if (typeof children === "string") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("script", {
-		...attrs,
-		dangerouslySetInnerHTML: innerHTML,
-		suppressHydrationWarning: true
-	});
-	return null;
+	})();
+	return [stream, stop];
 }
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/headContentUtils.js
-function buildTagsFromMatches(router, nonce, matches, assetCrossOrigin) {
-	matches = _getAssetMatches(matches);
-	const routeMeta = matches.map((match) => match.meta).filter((meta) => meta !== void 0);
-	const resultMeta = [];
-	const metaByAttribute = {};
-	let title;
-	for (let i = routeMeta.length - 1; i >= 0; i--) {
-		const metas = routeMeta[i];
-		for (let j = metas.length - 1; j >= 0; j--) {
-			const m = metas[j];
-			if (!m) continue;
-			if (m.title) {
-				if (!title) title = {
-					tag: "title",
-					children: m.title
-				};
-			} else if ("script:ld+json" in m) try {
-				const json = JSON.stringify(m["script:ld+json"]);
-				resultMeta.push({
-					tag: "script",
-					attrs: { type: "application/ld+json" },
-					children: escapeHtml(json)
-				});
-			} catch {}
-			else {
-				const attribute = m.name ?? m.property;
-				if (attribute) if (metaByAttribute[attribute]) continue;
-				else metaByAttribute[attribute] = true;
-				resultMeta.push({
-					tag: "meta",
-					attrs: {
-						...m,
-						nonce
+/** Rebuild a byte stream from encoded Seroval stream chunks. */
+function fromEncodedStream(source, decode) {
+	let unsubscribe;
+	let done = false;
+	return new ReadableStream({
+		start(controller) {
+			const dispose = source.on({
+				next(value) {
+					if (done) return;
+					try {
+						controller.enqueue(decode(value));
+					} catch (error) {
+						done = true;
+						const stop = unsubscribe;
+						unsubscribe = void 0;
+						stop?.();
+						controller.error(error);
 					}
-				});
-			}
-		}
-	}
-	if (title) resultMeta.push(title);
-	if (nonce) resultMeta.push({
-		tag: "meta",
-		attrs: {
-			property: "csp-nonce",
-			content: nonce
-		}
-	});
-	resultMeta.reverse();
-	const constructedLinks = matches.flatMap((match) => match.links ?? []).filter((link) => link !== void 0).map((link) => ({
-		tag: "link",
-		attrs: {
-			...link,
-			nonce
-		}
-	}));
-	const manifest = router.ssr?.manifest;
-	const manifestCssTags = [];
-	if (manifest) {
-		matches.forEach((match) => {
-			(manifest.routes[match.routeId]?.css)?.forEach((link) => {
-				const resolvedLink = resolveManifestCssLink(link);
-				manifestCssTags.push({
-					tag: "link",
-					attrs: {
-						rel: "stylesheet",
-						...resolvedLink,
-						crossOrigin: getAssetCrossOrigin(assetCrossOrigin, "stylesheet") ?? resolvedLink.crossOrigin,
-						suppressHydrationWarning: true,
-						nonce
+				},
+				throw(error) {
+					if (!done) {
+						done = true;
+						unsubscribe = void 0;
+						controller.error(error);
 					}
-				});
-			});
-		});
-		if (manifest.inlineStyle) manifestCssTags.push({
-			tag: "style",
-			attrs: {
-				...manifest.inlineStyle.attrs,
-				nonce
-			},
-			children: manifest.inlineStyle.children,
-			inlineCss: true
-		});
-	}
-	const preloadLinks = [];
-	if (manifest) matches.forEach((match) => {
-		manifest.routes[match.routeId]?.preloads?.forEach((preload) => {
-			preloadLinks.push({
-				tag: "link",
-				attrs: {
-					...getScriptPreloadAttrs(manifest, preload, assetCrossOrigin),
-					nonce
+				},
+				return() {
+					if (!done) {
+						done = true;
+						unsubscribe = void 0;
+						controller.close();
+					}
 				}
 			});
-		});
-	});
-	const styles = matches.flatMap((match) => match.styles ?? []).filter((style) => style !== void 0).map(({ children, ...attrs }) => ({
-		tag: "style",
-		attrs: {
-			...attrs,
-			nonce
+			if (done) dispose();
+			else unsubscribe = dispose;
 		},
-		children
-	}));
-	const headScripts = matches.flatMap((match) => match.headScripts ?? []).filter((script) => script !== void 0).map(({ children, ...script }) => ({
-		tag: "script",
-		attrs: {
-			...script,
-			nonce
-		},
-		children
-	}));
-	const tags = [];
-	appendUniqueUserTags(tags, resultMeta);
-	tags.push(...preloadLinks);
-	appendUniqueUserTags(tags, constructedLinks);
-	tags.push(...manifestCssTags);
-	appendUniqueUserTags(tags, styles);
-	appendUniqueUserTags(tags, headScripts);
-	return tags;
-}
-/**
-* Build the head/link/meta/script tags from the renderable presented prefix.
-* Used internally by `HeadContent`.
-*/
-var useTags = (assetCrossOrigin) => {
-	const router = useRouter();
-	const nonce = router.options.ssr?.nonce;
-	return buildTagsFromMatches(router, nonce, router.stores.matches.get(), assetCrossOrigin);
-};
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/HeadContent.js
-/**
-* Render route-managed head tags (title, meta, links, styles, head scripts).
-* Place inside the document head of your app shell.
-* @link https://tanstack.com/router/latest/docs/framework/react/guide/document-head-management
-*/
-function HeadContent(props) {
-	const tags = useTags(props.assetCrossOrigin);
-	const nonce = useRouter().options.ssr?.nonce;
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: tags.map((tag) => /* @__PURE__ */ (0, import_react.createElement)(Asset, {
-		...tag,
-		key: `tsr-meta-${JSON.stringify(tag)}`,
-		nonce
-	})) });
-}
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/Scripts.js
-var routeScriptAttrs = { suppressHydrationWarning: true };
-/**
-* Render body script tags collected from route matches and SSR manifests.
-* During streaming SSR, `<Scripts>` marks where late hydration scripts may
-* begin to be inserted.
-*/
-var Scripts = () => {
-	const router = useRouter();
-	const nonce = router.options.ssr?.nonce;
-	const getParts = (matches) => {
-		const parts = getSsrBodyScriptParts(matches, router.ssr?.manifest, nonce, routeScriptAttrs);
-		for (const script of parts[1]) if (typeof script.attrs?.src === "string") {
-			const scriptWithHoist = script;
-			scriptWithHoist.preventScriptHoist = true;
+		cancel() {
+			const dispose = unsubscribe;
+			unsubscribe = void 0;
+			dispose?.();
 		}
-		return parts;
-	};
-	return renderScripts(composeSsrBodyScripts(getParts(router.stores.matches.get()), router.serverSsr?.takeInitialHydrationScriptTags()));
-};
-function renderScripts(scripts) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_jsx_runtime.Fragment, { children: scripts.map((asset, i) => /* @__PURE__ */ (0, import_react.createElement)(Asset, {
-		...asset,
-		key: `tsr-scripts-${asset.tag}-${i}`
-	})) });
+	});
 }
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/constants.js
+/**
+* Serializes a RawStream into JSON requests and static-cache responses.
+* The optional signal stops the source pump when the request is aborted.
+*/
+/* @__NO_SIDE_EFFECTS__ */
+function createRawStreamJSONPlugin(signal) {
+	return /* @__PURE__ */ createPlugin({
+		tag: "tss/RawStream",
+		test: (value) => value instanceof RawStream,
+		parse: { async: async (value, ctx) => {
+			const text = await ctx.parse(value.hint === "text");
+			const [stream] = pumpEncodedStream(value.stream, value.hint === "text" ? encodeText : toBase64, signal);
+			return {
+				text,
+				stream: await ctx.parse(stream)
+			};
+		} },
+		serialize: void 0,
+		deserialize: void 0
+	});
+}
+var RawStreamJSONPlugin = /* @__PURE__ */ createRawStreamJSONPlugin();
+/**
+* Deserializes the JSON shape above back into a `ReadableStream<Uint8Array>`.
+* `test` never matches, so this plugin is inert during serialization and can
+* share a plugin list with `RawStreamJSONPlugin`.
+*/
+var RawStreamJSONDeserializePlugin = /* @__PURE__ */ createPlugin({
+	tag: "tss/RawStream",
+	test: () => false,
+	parse: {},
+	serialize: void 0,
+	deserialize(node, ctx) {
+		return fromEncodedStream(ctx.deserialize(node.stream), ctx.deserialize(node.text) ? decodeText : fromBase64);
+	}
+});
+var READABLE_STREAM_FACTORY = {};
+var READABLE_STREAM_FACTORY_CONSTRUCTOR = (stream) => new ReadableStream({ start(controller) {
+	stream.on({
+		next(value) {
+			try {
+				controller.enqueue(value);
+			} catch (_error) {}
+		},
+		throw(value) {
+			controller.error(value);
+		},
+		return() {
+			try {
+				controller.close();
+			} catch (_error) {}
+		}
+	});
+} });
+var ReadableStreamFactoryPlugin = /* @__PURE__ */ createPlugin({
+	tag: "seroval-plugins/web/ReadableStreamFactory",
+	test(value) {
+		return value === READABLE_STREAM_FACTORY;
+	},
+	parse: {
+		sync() {
+			return READABLE_STREAM_FACTORY;
+		},
+		async async() {
+			return await Promise.resolve(READABLE_STREAM_FACTORY);
+		},
+		stream() {
+			return READABLE_STREAM_FACTORY;
+		}
+	},
+	serialize() {
+		return READABLE_STREAM_FACTORY_CONSTRUCTOR.toString();
+	},
+	deserialize() {
+		return READABLE_STREAM_FACTORY;
+	}
+});
+async function drainStream(stream, reader) {
+	try {
+		while (true) {
+			const result = await reader.read();
+			if (result.done) {
+				stream.return(result.value);
+				reader.releaseLock();
+				break;
+			}
+			stream.next(result.value);
+		}
+	} catch (error) {
+		reader.releaseLock();
+		stream.throw(error);
+	}
+}
+function cleanupStream(reader) {
+	reader.cancel().catch(() => {});
+	reader.releaseLock();
+}
+function toStream(value) {
+	const stream = createStream();
+	const reader = value.getReader();
+	const cleanup = cleanupStream.bind(null, reader);
+	drainStream(stream, reader).catch(cleanup);
+	return [stream, cleanup];
+}
+var ReadableStreamPlugin = /* @__PURE__ */ createPlugin({
+	tag: "seroval/plugins/web/ReadableStream",
+	extends: [ReadableStreamFactoryPlugin],
+	test(value) {
+		if (typeof ReadableStream === "undefined") return false;
+		return value instanceof ReadableStream;
+	},
+	parse: {
+		sync(_value, ctx) {
+			return {
+				factory: ctx.parse(READABLE_STREAM_FACTORY),
+				stream: ctx.parse(createStream())
+			};
+		},
+		async async(value, ctx) {
+			return {
+				factory: await ctx.parse(READABLE_STREAM_FACTORY),
+				stream: await ctx.parse(toStream(value)[0])
+			};
+		},
+		stream(value, ctx) {
+			const [stream, cleanup] = toStream(value);
+			ctx.addCleanup(cleanup);
+			return {
+				factory: ctx.parse(READABLE_STREAM_FACTORY),
+				stream: ctx.parse(stream)
+			};
+		}
+	},
+	serialize(node, ctx) {
+		return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.stream) + ")";
+	},
+	deserialize(node, ctx) {
+		const stream = ctx.deserialize(node.stream);
+		if (!stream || typeof stream !== "object" || !isStream(stream)) throw new Error("Expected a stream source.");
+		return READABLE_STREAM_FACTORY_CONSTRUCTOR(stream);
+	}
+});
+/**
+* Plugins for JSON transport from a client: serializes RawStream arguments
+* and reads plain JSON responses, which never carry RawStream nodes.
+*/
+/* @__NO_SIDE_EFFECTS__ */
+function createDefaultSerovalPlugins(signal) {
+	return [
+		ShallowErrorPlugin,
+		signal ? /* @__PURE__ */ createRawStreamJSONPlugin(signal) : RawStreamJSONPlugin,
+		ReadableStreamPlugin
+	];
+}
+/**
+* `defaultSerovalPlugins` plus RawStream deserialization, for JSON that may
+* carry RawStream nodes: server-function request bodies and cached static
+* responses. Seroval deserializes by first tag match, so the deserialize half
+* precedes the serialize half; it never matches during serialization.
+*/
+var defaultSerovalDeserializerPlugins = [RawStreamJSONDeserializePlugin, .../* @__PURE__ */ createDefaultSerovalPlugins()];
+/**
+* Server-side RawStream plugin for multiplexed server-function responses.
+* The `hint` is ignored: framed responses always carry raw bytes.
+*/
+/* @__NO_SIDE_EFFECTS__ */
+function createRawStreamRPCPlugin(onRawStream) {
+	let nextStreamId = 1;
+	return /* @__PURE__ */ createPlugin({
+		tag: "tss/RawStream",
+		test(value) {
+			return value instanceof RawStream;
+		},
+		parse: { stream(value, ctx) {
+			const streamId = nextStreamId++;
+			onRawStream(streamId, value.stream);
+			return { streamId: ctx.parse(streamId) };
+		} },
+		serialize: void 0,
+		deserialize: void 0
+	});
+}
 var GLOBAL_TSR = "$_TSR";
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/tsrScript.js
+/**
+* Create a Seroval plugin for server-side serialization only. `tracker.didRun`
+* becomes true once the plugin serialized a value.
+*/
+/* @__NO_SIDE_EFFECTS__ */
+function makeSsrSerovalPlugin(serializationAdapter, tracker) {
+	return /* @__PURE__ */ createPlugin({
+		tag: "$TSR/t/" + serializationAdapter.key,
+		test: serializationAdapter.test,
+		parse: { stream(value, ctx) {
+			return { v: ctx.parse(serializationAdapter.toSerializable(value)) };
+		} },
+		serialize(node, ctx) {
+			if (tracker) tracker.didRun = true;
+			return GLOBAL_TSR + ".t.get(\"" + serializationAdapter.key + "\")(" + ctx.serialize(node.v) + ")";
+		},
+		deserialize: void 0
+	});
+}
 var tsrScript_default = "self.$_TSR={h(){this.hydrated=!0,this.c()},e(){this.streamEnded=!0,this.c()},c(){this.hydrated&&this.streamEnded&&(delete self.$_TSR,delete self.$R.tsr)},p(e){this.initialized?e():this.buffer.push(e)},buffer:[]}";
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/htmlBoundaryScanner.js
-var textEncoder = new TextEncoder();
+var textEncoder$2 = new TextEncoder();
 var DOCUMENT_CLOSE = "</body></html>";
 var SCRIPT_CLOSE = "<\/script>";
 var DOCUMENT_CLOSE_ANCHOR_INDEX = DOCUMENT_CLOSE.indexOf("y");
 var SCRIPT_CLOSE_ANCHOR_INDEX = SCRIPT_CLOSE.indexOf("p");
-var DOCUMENT_CLOSE_BYTES = textEncoder.encode(DOCUMENT_CLOSE);
-var SCRIPT_CLOSE_BYTES = textEncoder.encode(SCRIPT_CLOSE);
+var DOCUMENT_CLOSE_BYTES = textEncoder$2.encode(DOCUMENT_CLOSE);
+var SCRIPT_CLOSE_BYTES = textEncoder$2.encode(SCRIPT_CLOSE);
 function encodeIntoBoundedChunk(source, sourceOffset, output, outputOffset = 0) {
-	return textEncoder.encodeInto(sourceOffset === 0 ? source : source.slice(sourceOffset), outputOffset === 0 ? output : output.subarray(outputOffset));
+	return textEncoder$2.encodeInto(sourceOffset === 0 ? source : source.slice(sourceOffset), outputOffset === 0 ? output : output.subarray(outputOffset));
 }
 /** Advance matcher state and return the local offset after a complete match. */
 function advanceByteMatcher(matcher, value, startIndex = 0, findLast = false) {
@@ -7930,8 +3348,6 @@ function getExactBytesPrefixAtEnd(value, pattern, startIndex = 0) {
 		return candidateStart;
 	}
 }
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/hydrationScripts.js
 var encoder = new TextEncoder();
 var SOURCE_SEPARATOR = ";";
 var MAX_INITIAL_SOURCE_CODE_UNITS = 16384;
@@ -8306,8 +3722,389 @@ var HydrationScriptsOwner = class {
 function createHydrationScripts(nonce, initialSources) {
 	return new HydrationScriptsOwner(nonce, initialSources);
 }
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/handlerCallback.js
+var nodeBuffer = globalThis.Buffer;
+var toBase64Fast = nodeBuffer ? (bytes) => nodeBuffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64") : toBase64;
+var BINARY_FACTORY = () => {};
+var TEXT_FACTORY = () => {};
+var FACTORY_BINARY = `((s,u=1)=>new ReadableStream({start(c,f){f=s.on({next(b){const d=atob(b),a=new Uint8Array(d.length);for(let i=0;i<d.length;i++)a[i]=d.charCodeAt(i);c.enqueue(a)},throw(e){s=u=0;c.error(e)},return(){s=u=0;c.close()}});u=u&&f},cancel(){u&&u()}}))`;
+var FACTORY_TEXT = `((s,u=1,e=new TextEncoder)=>new ReadableStream({start(c,f){f=s.on({next(v){const x=v.slice(1);if(v[0]==='t')c.enqueue(e.encode(x));else{const d=atob(x),a=new Uint8Array(d.length);for(let i=0;i<d.length;i++)a[i]=d.charCodeAt(i);c.enqueue(a)}},throw(x){s=u=0;c.error(x)},return(){s=u=0;c.close()}});u=u&&f},cancel(){u&&u()}}))`;
+function makeFactoryPlugin(tag, sentinel, source) {
+	return createPlugin({
+		tag,
+		test(value) {
+			return value === sentinel;
+		},
+		parse: { stream() {
+			return {};
+		} },
+		serialize() {
+			return source;
+		},
+		deserialize: void 0
+	});
+}
+/** Server-only plugins for streaming hydration data into HTML. */
+var ssrSerovalPlugins = [
+	ShallowErrorPlugin,
+	/* @__PURE__ */ createPlugin({
+		tag: "tss/RawStream",
+		extends: [/* @__PURE__ */ makeFactoryPlugin("tss/RawStreamFactory", BINARY_FACTORY, FACTORY_BINARY), /* @__PURE__ */ makeFactoryPlugin("tss/RawStreamFactoryText", TEXT_FACTORY, FACTORY_TEXT)],
+		test(value) {
+			return value instanceof RawStream;
+		},
+		parse: { stream(value, ctx) {
+			const text = value.hint === "text";
+			const factory = ctx.parse(text ? TEXT_FACTORY : BINARY_FACTORY);
+			const [stream, stop] = pumpEncodedStream(value.stream, text ? encodeText : toBase64Fast);
+			ctx.addCleanup(stop);
+			return {
+				factory,
+				stream: ctx.parse(stream)
+			};
+		} },
+		serialize(node, ctx) {
+			return "(" + ctx.serialize(node.factory) + ")(" + ctx.serialize(node.stream) + ")";
+		},
+		deserialize: void 0
+	}),
+	ReadableStreamPlugin
+];
+function dehydrateMatch(match) {
+	const dehydratedMatch = {
+		i: dehydrateSsrMatchId(match.id),
+		u: match.updatedAt,
+		s: match.status
+	};
+	for (const [key, shorthand] of [
+		["__beforeLoadContext", "b"],
+		["loaderData", "l"],
+		["error", "e"],
+		["ssr", "ssr"]
+	]) if (match[key] !== void 0) dehydratedMatch[shorthand] = match[key];
+	if (match._notFound) dehydratedMatch.g = true;
+	return dehydratedMatch;
+}
+function disposeSerializationSafely(dispose) {
+	try {
+		dispose?.();
+	} catch (err) {
+		console.error("Error disposing SSR serialization:", err);
+	}
+}
+function notifyAndClearListeners(listeners, errorMessage, arg) {
+	const pending = listeners.slice();
+	listeners.length = 0;
+	for (const listener of pending) try {
+		listener(arg);
+	} catch (error) {
+		console.error(errorMessage, error);
+	}
+}
+var MANIFEST_CACHE_SIZE = 100;
+var manifestCaches = /* @__PURE__ */ new WeakMap();
+function getManifestCache(manifest) {
+	const cache = manifestCaches.get(manifest);
+	if (cache) return cache;
+	const newCache = createSieveCache(MANIFEST_CACHE_SIZE);
+	manifestCaches.set(manifest, newCache);
+	return newCache;
+}
+function getInlineCssForPreparedRoutes(manifest, preparedRoutes) {
+	const styles = manifest.inlineCss?.styles;
+	const hrefs = preparedRoutes.inlineCssHrefs;
+	if (!styles || !hrefs?.length) return;
+	let css = "";
+	for (const href of hrefs) css += styles[href];
+	return css;
+}
+function getInlineCssAssetForPreparedRoutes(manifest, preparedRoutes) {
+	const css = getInlineCssForPreparedRoutes(manifest, preparedRoutes);
+	return css === void 0 ? void 0 : createInlineCssStyleAsset(css);
+}
+function getMatchedRoutesCacheKey(matches) {
+	let cacheKey = "";
+	for (let i = 0; i < matches.length; i++) cacheKey += (i === 0 ? "" : "\0") + matches[i].routeId;
+	return cacheKey;
+}
+function getPreparedMatchedManifestRoutes(manifest, matches, cacheKey) {
+	{
+		const cached = getManifestCache(manifest).get(cacheKey);
+		if (cached) return cached;
+	}
+	const preparedRoutes = prepareMatchedManifestRoutes(manifest, matches);
+	getManifestCache(manifest).set(cacheKey, preparedRoutes);
+	return preparedRoutes;
+}
+function prepareMatchedManifestRoutes(manifest, matches) {
+	const inlineStyles = manifest.inlineCss?.styles;
+	const routes = {};
+	if (!inlineStyles) {
+		for (const match of matches) {
+			const route = manifest.routes[match.routeId];
+			if (route) routes[match.routeId] = route;
+		}
+		return {
+			routes,
+			hasStrippedRoutes: false
+		};
+	}
+	const inlineCssHrefs = [];
+	const seenInlineCssHrefs = /* @__PURE__ */ new Set();
+	let hasStrippedRoutes = false;
+	for (const match of matches) {
+		const routeId = match.routeId;
+		const route = manifest.routes[routeId];
+		if (!route) continue;
+		const nextRoute = stripInlinedStylesheetAssetsFromRoute(inlineStyles, route, inlineCssHrefs, seenInlineCssHrefs);
+		if (nextRoute !== route) hasStrippedRoutes = true;
+		routes[routeId] = nextRoute;
+	}
+	return {
+		routes,
+		hasStrippedRoutes,
+		...inlineCssHrefs.length ? { inlineCssHrefs } : {}
+	};
+}
+function stripInlinedStylesheetAssetsFromRoute(inlineStyles, route, inlineCssHrefs, seenInlineCssHrefs) {
+	const css = route.css;
+	if (!css) return route;
+	if (css.length === 0) {
+		const nextRoute = { ...route };
+		delete nextRoute.css;
+		return nextRoute;
+	}
+	let cssLinks;
+	for (let i = 0; i < css.length; i++) {
+		const link = css[i];
+		const href = getStylesheetHref(link);
+		if (inlineStyles[href] === void 0) {
+			if (cssLinks) cssLinks.push(link);
+			continue;
+		}
+		if (!seenInlineCssHrefs.has(href)) {
+			seenInlineCssHrefs.add(href);
+			inlineCssHrefs.push(href);
+		}
+		if (!cssLinks) cssLinks = css.slice(0, i);
+	}
+	if (!cssLinks) return route;
+	if (cssLinks.length > 0) return {
+		...route,
+		css: cssLinks
+	};
+	const nextRoute = { ...route };
+	delete nextRoute.css;
+	return nextRoute;
+}
+function hasRouteAssets(route) {
+	return !!route.scripts?.length || !!route.css?.length;
+}
+function hasRequestAssets(assets) {
+	return !!assets && (!!assets.preloads?.length || hasRouteAssets(assets));
+}
+function mergeRequestAssetsIntoRootRoute(rootRoute, requestAssets) {
+	const preloads = requestAssets?.preloads?.length ? [...requestAssets.preloads, ...rootRoute?.preloads ?? []] : rootRoute?.preloads;
+	const scripts = requestAssets?.scripts?.length ? [...requestAssets.scripts, ...rootRoute?.scripts ?? []] : rootRoute?.scripts;
+	const cssLinks = requestAssets?.css?.length ? [...requestAssets.css, ...rootRoute?.css ?? []] : rootRoute?.css;
+	return {
+		...rootRoute ?? {},
+		...preloads?.length ? { preloads } : {},
+		...scripts?.length ? { scripts } : {},
+		...cssLinks?.length ? { css: cssLinks } : {}
+	};
+}
+/**
+* Compose a client-facing manifest from prepared routes, an optional inline
+* style, and optional request-scoped assets merged into the root route.
+* Shared by the `router.ssr.manifest` getter and `dehydrate()` so the two
+* compositions cannot drift.
+*/
+function composeManifest(scriptFormat, inlineStyle, routes, requestAssets) {
+	const base = {
+		...scriptFormat ? { scriptFormat } : {},
+		...inlineStyle ? { inlineStyle } : {},
+		routes
+	};
+	if (!hasRequestAssets(requestAssets)) return base;
+	return {
+		...base,
+		routes: {
+			...routes,
+			[rootRouteId]: mergeRequestAssetsIntoRootRoute(routes[rootRouteId], requestAssets)
+		}
+	};
+}
+function attachRouterServerSsrUtils({ router, manifest, getRequestAssets }) {
+	let memoizedPreparedManifest;
+	router.ssr = { get manifest() {
+		if (!manifest) return manifest;
+		const requestAssets = getRequestAssets?.();
+		const hasAssets = hasRequestAssets(requestAssets);
+		if (!hasAssets && !manifest.inlineCss) return manifest;
+		let inlineCssAsset;
+		let routes = manifest.routes;
+		if (manifest.inlineCss) {
+			const matches = _getRenderedMatches(router.stores.matches.get());
+			const cacheKey = getMatchedRoutesCacheKey(matches);
+			if (memoizedPreparedManifest?.cacheKey === cacheKey) {
+				inlineCssAsset = memoizedPreparedManifest.inlineCssAsset;
+				routes = memoizedPreparedManifest.routes;
+			} else {
+				const preparedManifest = getPreparedMatchedManifestRoutes(manifest, matches, cacheKey);
+				inlineCssAsset = getInlineCssAssetForPreparedRoutes(manifest, preparedManifest);
+				if (preparedManifest.hasStrippedRoutes) routes = {
+					...manifest.routes,
+					...preparedManifest.routes
+				};
+				memoizedPreparedManifest = {
+					cacheKey,
+					inlineCssAsset,
+					routes
+				};
+			}
+		}
+		return composeManifest(manifest.scriptFormat, inlineCssAsset, routes, hasAssets ? requestAssets : void 0);
+	} };
+	let dehydrationPhase = "idle";
+	let renderFinished = false;
+	const renderFinishedListeners = [];
+	const cleanupListeners = [];
+	let cleanupStarted = false;
+	let settled = false;
+	let disposeSerialization;
+	const hydrationScripts = createHydrationScripts(router.options.ssr?.nonce);
+	const serverSsr = {
+		hydrationScripts,
+		dehydrate: async (opts) => {
+			if (dehydrationPhase !== "idle") invariant();
+			opts?.signal?.throwIfAborted();
+			dehydrationPhase = "started";
+			let matchesToDehydrate = _getRenderedMatches(router.stores.matches.get());
+			if (router.isShell()) matchesToDehydrate = matchesToDehydrate.slice(0, 1);
+			const matches = matchesToDehydrate.map(dehydrateMatch);
+			let manifestToDehydrate = void 0;
+			if (manifest) {
+				const cacheKey = getMatchedRoutesCacheKey(matchesToDehydrate);
+				const preparedManifest = getPreparedMatchedManifestRoutes(manifest, matchesToDehydrate, cacheKey);
+				manifestToDehydrate = composeManifest(manifest.scriptFormat, preparedManifest.inlineCssHrefs ? createInlineCssPlaceholderAsset() : void 0, preparedManifest.routes, opts?.requestAssets);
+			}
+			const dehydratedRouter = {
+				manifest: manifestToDehydrate,
+				matches
+			};
+			const dehydrate = router.options.dehydrate;
+			const dehydratedData = dehydrate ? opts?.signal ? await waitForReason(dehydrate.call(router.options), opts.signal) : await dehydrate.call(router.options) : void 0;
+			opts?.signal?.throwIfAborted();
+			if (cleanupStarted) return;
+			if (dehydratedData !== void 0) dehydratedRouter.dehydratedData = dehydratedData;
+			const trackPlugins = { didRun: false };
+			const serializationAdapters = router.options.serializationAdapters;
+			const plugins = serializationAdapters ? [...serializationAdapters.map((adapter) => /* @__PURE__ */ makeSsrSerovalPlugin(adapter, trackPlugins)), ...ssrSerovalPlugins] : ssrSerovalPlugins;
+			let serializationCompleteSignaled = false;
+			let initialSerialized = false;
+			const completeScriptSerialization = (result) => {
+				if (serializationCompleteSignaled || cleanupStarted) return;
+				serializationCompleteSignaled = true;
+				const dispose = disposeSerialization;
+				disposeSerialization = void 0;
+				if (result === true) {
+					settled = true;
+					hydrationScripts.finish();
+				} else if (result) hydrationScripts.fail(result.error);
+				if (dispose) queueMicrotask(() => disposeSerializationSafely(dispose));
+			};
+			let synchronousFailure;
+			const dispose = crossSerializeStream(dehydratedRouter, {
+				refs: /* @__PURE__ */ new Map(),
+				plugins,
+				onSerialize: (data, initial) => {
+					if (serializationCompleteSignaled || cleanupStarted) return;
+					initialSerialized ||= initial;
+					if (!hydrationScripts.pushSerializedSource(data, initial, trackPlugins.didRun)) completeScriptSerialization(false);
+				},
+				onError: (err) => {
+					if (serializationCompleteSignaled || cleanupStarted) return;
+					console.error("Serialization error:", err);
+					synchronousFailure = { error: err };
+					completeScriptSerialization({ error: err });
+				},
+				scopeId: "tsr",
+				onDone: () => {
+					if (initialSerialized) completeScriptSerialization(true);
+				}
+			});
+			if (cleanupStarted || serializationCompleteSignaled) disposeSerializationSafely(dispose);
+			else disposeSerialization = dispose;
+			if (synchronousFailure) throw synchronousFailure.error;
+		},
+		onRenderFinished: (listener) => {
+			if (cleanupStarted) return;
+			if (renderFinished) {
+				try {
+					listener();
+				} catch (error) {
+					console.error("Error in render finished listener:", error);
+				}
+				return;
+			}
+			renderFinishedListeners.push(listener);
+		},
+		onCleanup: (listener) => {
+			if (cleanupStarted) {
+				try {
+					listener(settled);
+				} catch (error) {
+					console.error("Error in SSR cleanup listener:", error);
+				}
+				return;
+			}
+			cleanupListeners.push(listener);
+		},
+		setRenderFinished: () => {
+			if (cleanupStarted || renderFinished) return;
+			renderFinished = true;
+			hydrationScripts.liftBarrier();
+			notifyAndClearListeners(renderFinishedListeners, "Error in render finished listener:", void 0);
+		},
+		disableHydration: () => {
+			if (cleanupStarted || dehydrationPhase === "disabled") return;
+			if (dehydrationPhase !== "idle") invariant();
+			hydrationScripts.disableHydration();
+			dehydrationPhase = "disabled";
+		},
+		takeInitialHydrationScriptTags: hydrationScripts.takeInitialHydrationScriptTags,
+		cleanup() {
+			if (cleanupStarted) return;
+			cleanupStarted = true;
+			hydrationScripts.cleanup();
+			const dispose = disposeSerialization;
+			disposeSerialization = void 0;
+			disposeSerializationSafely(dispose);
+			notifyAndClearListeners(cleanupListeners, "Error in SSR cleanup listener:", settled);
+			renderFinishedListeners.length = 0;
+			router.ssr = void 0;
+			router.serverSsr = void 0;
+		}
+	};
+	router.serverSsr = serverSsr;
+	for (const listener of router.serverSsrLifecycle?.onServerSsrAttach ?? []) try {
+		listener(serverSsr);
+	} catch (err) {
+		console.error("SSR attach listener error:", err);
+	}
+}
+function getNormalizedURL(url, base) {
+	if (typeof url === "string") url = url.replace("\\", "%5C");
+	const rawUrl = new URL(url, base);
+	const handledProtocolRelativeURL = rawUrl.pathname.startsWith("//");
+	const decodedPathname = decodePath(handledProtocolRelativeURL ? rawUrl.pathname.replace(/^\/+/, "/") : rawUrl.pathname);
+	const searchParams = new URLSearchParams(rawUrl.search);
+	const normalizedHref = decodedPathname + (searchParams.size > 0 ? "?" : "") + searchParams.toString() + rawUrl.hash;
+	return {
+		url: new URL(normalizedHref, rawUrl.origin),
+		handledProtocolRelativeURL
+	};
+}
 function isSsrResponse(value) {
 	if (typeof value !== "object" || value === null || !("response" in value) || !(value.response instanceof Response) || !("serverSsrCleanup" in value)) return false;
 	if (value.serverSsrCleanup === "none") return true;
@@ -8392,8 +4189,6 @@ function stripSsrResponseBody(result, reason) {
 function defineHandlerCallback(handler) {
 	return handler;
 }
-//#endregion
-//#region node_modules/@tanstack/router-core/dist/esm/ssr/transformStreamWithRouter.js
 var DEFAULT_SERIALIZATION_TIMEOUT_MS = 6e4;
 var MIN_APPLICATION_STRING_CHUNK_BYTES = 256;
 var MAX_APPLICATION_STRING_CHUNK_BYTES = 65536;
@@ -8884,8 +4679,6 @@ function makeMergeStream(serverSsr, reader, hydrationOutput, opts) {
 	disarmLifecycle = armStreamLifecycle(serverSsr, opts, () => terminal, terminate);
 	return stream;
 }
-//#endregion
-//#region node_modules/react-dom/cjs/react-dom-server-legacy.node.production.js
 /**
 * @license React
 * react-dom-server-legacy.node.production.js
@@ -12978,8 +8771,6 @@ var require_react_dom_server_legacy_node_production = /* @__PURE__ */ __commonJS
 	};
 	exports.version = "19.3.0";
 }));
-//#endregion
-//#region node_modules/react-dom/cjs/react-dom-server.node.production.js
 /**
 * @license React
 * react-dom-server.node.production.js
@@ -12991,7 +8782,7 @@ var require_react_dom_server_legacy_node_production = /* @__PURE__ */ __commonJS
 */
 var require_react_dom_server_node_production = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var util = __require("util");
-	var crypto = __require("crypto");
+	var crypto$1 = __require("crypto");
 	var async_hooks = __require("async_hooks");
 	var React = require_react();
 	var ReactDOM = require_react_dom();
@@ -15218,7 +11009,7 @@ var require_react_dom_server_node_production = /* @__PURE__ */ __commonJSMin(((e
 			null,
 			hookIndex
 		]);
-		componentKeyPath = crypto.createHash("md5");
+		componentKeyPath = crypto$1.createHash("md5");
 		componentKeyPath.update(permalink);
 		return "k" + componentKeyPath.digest("hex");
 	}
@@ -17574,9 +13365,7 @@ var require_react_dom_server_node_production = /* @__PURE__ */ __commonJSMin(((e
 	};
 	exports.version = "19.3.0";
 }));
-//#endregion
-//#region node_modules/isbot/index.mjs
-var import_server_node = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((exports) => {
+var require_server_node = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var l = require_react_dom_server_legacy_node_production();
 	var s = require_react_dom_server_node_production();
 	exports.version = l.version;
@@ -17586,7 +13375,7 @@ var import_server_node = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(
 	exports.renderToReadableStream = s.renderToReadableStream;
 	exports.resumeToPipeableStream = s.resumeToPipeableStream;
 	exports.resume = s.resume;
-})))(), 1);
+}));
 var fullPattern = " daum[ /]| deusu/|(?:^|[^g])news(?!sapphire)|(?<! channel/|google/)google(?!(?:wv|app|/google| pixel))|(?<! cu)bots?(?:\\b|_)|(?<!cam)scan|(?<!lib)http|24x7|;\\s\\w+;$|@[a-z][\\w-]+\\.|\\(\\)|\\.com\\b|\\b\\w+/1\\.0;|\\bbw/|\\bdlc\\b|\\bort/|\\bperl\\b|\\btime/|\\||^[<\\(;]|^[\\w \\.\\-\\(?:\\):%]+(?:/v?\\d+(?:\\.\\d+)?(?:\\.\\d{1,10})*?)?(?:,|$)|^[\\w\\-]+/[\\w]+$|^[^ ]{50,}$|^\\d+\\b|^\\w*search\\b|^\\w+/[\\w\\(\\)]*$|^\\w+/\\d\\.\\d\\s\\([\\w@]+\\)$|^active|^ad muncher|^amaya|^apache/|^avsdevicesdk/|^azure|^biglotron|^blackbox exporter|^bot|^clamav[ /]|^claude-code/|^client/|^cobweb/|^custom|^ddg[_-]android|^discourse|^dispatch/\\d|^downcast/|^duckduckgo|^email|^exodusmovement|^facebook|^getright/|^gozilla/|^hobbit|^hotzonu|^hwcdn/|^igetter/|^jeode/|^jetty/|^jigsaw|^microsoft bits|^movabletype|^mozilla/\\d\\.\\d\\s[\\w\\.-]+$|^mozilla/\\d\\.\\d\\s\\((?:compatible;)?(?:\\s?[\\w\\d-.]+\\/\\d+\\.\\d+)?\\)$|^navermailapp|^netsurf|^offline|^openai/|^owler|^php|^postman|^ps_daily/|^python|^rank|^read|^reed|^remove\\.bg/|^rest|^rss|^snapchat|^sora |^space bison|^stape/|^svn|^swcd |^taringa|^thumbor/|^track|^w3c|^webbandit/|^webcopier|^wget|^whatsapp|^wordpress|^xenu link sleuth|^yahoo|^yandex|^zdm/\\d|^zoom marketplace/|abuse|advisor|agent\\b|analyzer|archive|ask jeeves/teoma|attracta|audit|bluecoat drtr|browsex|burpcollaborator|capture|catch|check\\b|checker|chrome-lighthouse|chromeframe|classifier|cloudflare|collapsify\\b|convertify|cookiehubverify/|crawl|cursor/|cypress/|dareboost|datanyze|dejaclick|detect|discovery|dmbrowser|download|exaleadcloudview|feed|firephp|foregenix|functionize|grab|hardenize\\b|headless|hotjar|httrack|hubspot marketing grader|ibisbrowser|infrawatch|insight|inspect|iplabel|java(?!;)|library|linkcheck|linktiger|mail\\.ru/|manager|manus-user/|marketgoo/|measure|monitor\\b|neustar wpm|node\\b|nutch|offbyone|openvas|optimize|pageburst|pagespeed|parser|phantomjs|pingdom|playwright|powermarks|preview|productfinder|prospectingstudio|proxy|ptst[ /]\\d|radar|readable/|retriever|rexx;|rigor|rss\\b|scrape|securityheaders|selenium|server|silktide|sindup/|sogou|sparkler/|speedcurve|spider|splash|statuscake|supercleaner|synapse|synthetic|testlocally|tools|torrent|transcoder|url|validator|virtuoso|wappalyzer|watchtowr|webglance|webkit2png|whatcms/|xtate/";
 var naivePattern = /bot|crawl|http|lighthouse|scan|search|spider/i;
 var pattern;
@@ -17604,8 +13393,7 @@ function isBot(userAgent) {
 	return isNonEmptyString(userAgent) && getPattern().test(userAgent);
 }
 var isbot = isBot;
-//#endregion
-//#region node_modules/@tanstack/react-router/dist/esm/ssr/renderRouterToStream.js
+var import_server_node = /* @__PURE__ */ __toESM(require_server_node(), 1);
 var renderRouterToStream = async ({ request, router, responseHeaders, children }) => {
 	const signal = request.signal;
 	if (signal.aborted) {
@@ -17686,5 +13474,2167 @@ var renderRouterToStream = async ({ request, router, responseHeaders, children }
 		throw error;
 	}
 };
+var defaultStreamHandler = defineHandlerCallback(({ request, router, responseHeaders }) => renderRouterToStream({
+	request,
+	router,
+	responseHeaders,
+	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(StartServer, { router })
+}));
+var NullProtoObj = /* @__PURE__ */ (() => {
+	const e = function() {};
+	return e.prototype = Object.create(null), Object.freeze(e.prototype), e;
+})();
+function lazyInherit(target, source, sourceKey) {
+	for (const key of [...Object.getOwnPropertyNames(source), ...Object.getOwnPropertySymbols(source)]) {
+		if (key === "constructor") continue;
+		const targetDesc = Object.getOwnPropertyDescriptor(target, key);
+		const desc = Object.getOwnPropertyDescriptor(source, key);
+		let modified = false;
+		if (desc.get) {
+			modified = true;
+			desc.get = targetDesc?.get || function() {
+				return this[sourceKey][key];
+			};
+		}
+		if (desc.set) {
+			modified = true;
+			desc.set = targetDesc?.set || function(value) {
+				this[sourceKey][key] = value;
+			};
+		}
+		if (!targetDesc?.value && typeof desc.value === "function") {
+			modified = true;
+			desc.value = function(...args) {
+				return this[sourceKey][key](...args);
+			};
+		}
+		if (modified) Object.defineProperty(target, key, desc);
+	}
+}
+var _needsNormRE = /(?:(?:^|\/)(?:\.|\.\.|%2e|%2e\.|\.%2e|%2e%2e)(?:\/|$))|[\\^#"<>{}`\x80-\uffff]/i;
+var _searchNeedsNormRE = /[#"'<>]/;
+var FastURL = /* @__PURE__ */ (() => {
+	const NativeURL = globalThis.URL;
+	const FastURL = class URL {
+		#url;
+		#href;
+		#protocol;
+		#host;
+		#pathname;
+		#search;
+		#searchParams;
+		#pos;
+		constructor(url) {
+			if (typeof url === "string") {
+				const isOriginForm = url[0] === "/";
+				if (isOriginForm && !_searchNeedsNormRE.test(url)) this.#href = url;
+				else this.#url = new NativeURL(isOriginForm ? `http://localhost${url}` : url);
+			} else if (_needsNormRE.test(url.pathname) || url.search && _searchNeedsNormRE.test(url.search)) this.#url = new NativeURL(`${url.protocol || "http:"}//${url.host || "localhost"}${url.pathname}${url.search || ""}`);
+			else {
+				this.#protocol = url.protocol;
+				this.#host = url.host;
+				this.#pathname = url.pathname;
+				this.#search = url.search;
+			}
+		}
+		static [Symbol.hasInstance](val) {
+			return val instanceof NativeURL;
+		}
+		get _url() {
+			if (this.#url) return this.#url;
+			this.#url = new NativeURL(this.href);
+			this.#href = void 0;
+			this.#protocol = void 0;
+			this.#host = void 0;
+			this.#pathname = void 0;
+			this.#search = void 0;
+			this.#searchParams = void 0;
+			this.#pos = void 0;
+			return this.#url;
+		}
+		get href() {
+			if (this.#url) return this.#url.href;
+			if (!this.#href) this.#href = `${this.#protocol || "http:"}//${this.#host || "localhost"}${this.#pathname || "/"}${this.#search || ""}`;
+			return this.#href;
+		}
+		#getPos() {
+			if (!this.#pos) {
+				const url = this.href;
+				const protoIndex = url.indexOf("://");
+				const pathnameIndex = protoIndex === -1 ? -1 : url.indexOf("/", protoIndex + 4);
+				const qIndex = pathnameIndex === -1 ? -1 : url.indexOf("?", pathnameIndex);
+				this.#pos = [
+					protoIndex,
+					pathnameIndex,
+					qIndex
+				];
+			}
+			return this.#pos;
+		}
+		get pathname() {
+			if (this.#url) return this.#url.pathname;
+			if (this.#pathname === void 0) {
+				const [, pathnameIndex, queryIndex] = this.#getPos();
+				if (pathnameIndex === -1) return this._url.pathname;
+				this.#pathname = this.href.slice(pathnameIndex, queryIndex === -1 ? void 0 : queryIndex);
+			}
+			return this.#pathname;
+		}
+		get search() {
+			if (this.#url) return this.#url.search;
+			if (this.#search === void 0) {
+				const [, pathnameIndex, queryIndex] = this.#getPos();
+				if (pathnameIndex === -1) return this._url.search;
+				const url = this.href;
+				this.#search = queryIndex === -1 || queryIndex === url.length - 1 ? "" : url.slice(queryIndex);
+			}
+			return this.#search;
+		}
+		get searchParams() {
+			if (this.#url) return this.#url.searchParams;
+			if (!this.#searchParams) this.#searchParams = new URLSearchParams(this.search);
+			return this.#searchParams;
+		}
+		get protocol() {
+			if (this.#url) return this.#url.protocol;
+			if (this.#protocol === void 0) {
+				const [protocolIndex] = this.#getPos();
+				if (protocolIndex === -1) return this._url.protocol;
+				const url = this.href;
+				this.#protocol = url.slice(0, protocolIndex + 1);
+			}
+			return this.#protocol;
+		}
+		toString() {
+			return this.href;
+		}
+		toJSON() {
+			return this.href;
+		}
+	};
+	lazyInherit(FastURL.prototype, NativeURL.prototype, "_url");
+	Object.setPrototypeOf(FastURL.prototype, NativeURL.prototype);
+	Object.setPrototypeOf(FastURL, NativeURL);
+	return FastURL;
+})();
+var NodeResponse = /* @__PURE__ */ (() => {
+	const NativeResponse = globalThis.Response;
+	const STATUS_CODES = globalThis.process?.getBuiltinModule?.("node:http")?.STATUS_CODES || {};
+	class NodeResponse {
+		#body;
+		#init;
+		#headers;
+		#response;
+		constructor(body, init) {
+			this.#body = body;
+			this.#init = init;
+		}
+		static [Symbol.hasInstance](val) {
+			return val instanceof NativeResponse;
+		}
+		get status() {
+			return this.#response?.status || this.#init?.status || 200;
+		}
+		get statusText() {
+			return this.#response?.statusText || this.#init?.statusText || STATUS_CODES[this.status] || "";
+		}
+		get headers() {
+			if (this.#response) return this.#response.headers;
+			if (this.#headers) return this.#headers;
+			const initHeaders = this.#init?.headers;
+			return this.#headers = initHeaders instanceof Headers ? initHeaders : new Headers(initHeaders);
+		}
+		get ok() {
+			if (this.#response) return this.#response.ok;
+			const status = this.status;
+			return status >= 200 && status < 300;
+		}
+		get _response() {
+			if (this.#response) return this.#response;
+			let body = this.#body;
+			if (body && typeof body.pipe === "function" && !(body instanceof Readable)) {
+				const stream = new PassThrough();
+				body.pipe(stream);
+				const abort = body.abort;
+				if (abort) stream.once("close", () => abort());
+				body = stream;
+			}
+			this.#response = new NativeResponse(body, this.#headers ? {
+				...this.#init,
+				headers: this.#headers
+			} : this.#init);
+			this.#init = void 0;
+			this.#headers = void 0;
+			this.#body = void 0;
+			return this.#response;
+		}
+		_toNodeResponse() {
+			const status = this.status;
+			const statusText = this.statusText;
+			let body;
+			let contentType;
+			let contentLength;
+			if (this.#response) body = this.#response.body;
+			else if (this.#body) if (this.#body instanceof ReadableStream) body = this.#body;
+			else if (typeof this.#body === "string") {
+				body = this.#body;
+				contentType = "text/plain; charset=UTF-8";
+				contentLength = Buffer.byteLength(this.#body);
+			} else if (this.#body instanceof ArrayBuffer) {
+				body = Buffer.from(this.#body);
+				contentLength = this.#body.byteLength;
+			} else if (this.#body instanceof Uint8Array) {
+				body = this.#body;
+				contentLength = this.#body.byteLength;
+			} else if (this.#body instanceof DataView) {
+				body = Buffer.from(this.#body.buffer);
+				contentLength = this.#body.byteLength;
+			} else if (this.#body instanceof Blob) {
+				body = this.#body.stream();
+				contentType = this.#body.type;
+				contentLength = this.#body.size;
+			} else if (typeof this.#body.pipe === "function") body = this.#body;
+			else body = this._response.body;
+			const headers = [];
+			const initHeaders = this.#init?.headers;
+			const headerEntries = this.#response?.headers || this.#headers || (initHeaders ? Array.isArray(initHeaders) ? initHeaders : initHeaders?.entries ? initHeaders.entries() : Object.entries(initHeaders) : void 0);
+			let hasContentTypeHeader;
+			let hasContentLength;
+			if (headerEntries) for (const [key, value] of headerEntries) {
+				const lowerKey = typeof key === "string" ? key.toLowerCase() : String(key);
+				if (Array.isArray(value)) for (const v of value) headers.push(lowerKey, v);
+				else headers.push(lowerKey, value);
+				if (lowerKey === "content-type") hasContentTypeHeader = true;
+				else if (lowerKey === "content-length") hasContentLength = true;
+			}
+			if (contentType && !hasContentTypeHeader) headers.push("content-type", contentType);
+			if (contentLength && !hasContentLength) headers.push("content-length", String(contentLength));
+			this.#init = void 0;
+			this.#headers = void 0;
+			this.#response = void 0;
+			this.#body = void 0;
+			return {
+				status,
+				statusText,
+				headers,
+				body
+			};
+		}
+	}
+	lazyInherit(NodeResponse.prototype, NativeResponse.prototype, "_response");
+	Object.setPrototypeOf(NodeResponse, NativeResponse);
+	Object.setPrototypeOf(NodeResponse.prototype, NativeResponse.prototype);
+	return NodeResponse;
+})();
+function decodePathname(pathname) {
+	return decodeURI(pathname.includes("%25") ? pathname.replace(/%25/g, "%2525") : pathname);
+}
+var kEventNS = "h3.internal.event.";
+var kEventRes = /* @__PURE__ */ Symbol.for(`${kEventNS}res`);
+var kEventResHeaders = /* @__PURE__ */ Symbol.for(`${kEventNS}res.headers`);
+var kEventResErrHeaders = /* @__PURE__ */ Symbol.for(`${kEventNS}res.err.headers`);
+var H3Event = class {
+	app;
+	req;
+	url;
+	context;
+	static __is_event__ = true;
+	constructor(req, context, app) {
+		this.context = context || req.context || new NullProtoObj();
+		this.req = req;
+		this.app = app;
+		const _url = req._url;
+		const url = _url && _url instanceof URL ? _url : new FastURL(req.url);
+		if (url.pathname.includes("%")) url.pathname = decodePathname(url.pathname);
+		this.url = url;
+	}
+	get res() {
+		return this[kEventRes] ||= new H3EventResponse();
+	}
+	get runtime() {
+		return this.req.runtime;
+	}
+	waitUntil(promise) {
+		this.req.waitUntil?.(promise);
+	}
+	toString() {
+		return `[${this.req.method}] ${this.req.url}`;
+	}
+	toJSON() {
+		return this.toString();
+	}
+	get node() {
+		return this.req.runtime?.node;
+	}
+	get headers() {
+		return this.req.headers;
+	}
+	get path() {
+		return this.url.pathname + this.url.search;
+	}
+	get method() {
+		return this.req.method;
+	}
+};
+var H3EventResponse = class {
+	status;
+	statusText;
+	get headers() {
+		return this[kEventResHeaders] ||= new Headers();
+	}
+	get errHeaders() {
+		return this[kEventResErrHeaders] ||= new Headers();
+	}
+};
+var DISALLOWED_STATUS_CHARS = /[^\u0009\u0020-\u007E]/g;
+function sanitizeStatusMessage(statusMessage = "") {
+	return statusMessage.replace(DISALLOWED_STATUS_CHARS, "");
+}
+function sanitizeStatusCode(statusCode, defaultStatusCode = 200) {
+	if (!statusCode) return defaultStatusCode;
+	if (typeof statusCode === "string") statusCode = +statusCode;
+	if (statusCode < 100 || statusCode > 599) return defaultStatusCode;
+	return statusCode;
+}
+var HTTPError = class HTTPError extends Error {
+	get name() {
+		return "HTTPError";
+	}
+	status;
+	statusText;
+	headers;
+	cause;
+	data;
+	body;
+	unhandled;
+	static isError(input) {
+		return input instanceof Error && input?.name === "HTTPError";
+	}
+	static status(status, statusText, details) {
+		return new HTTPError({
+			...details,
+			statusText,
+			status
+		});
+	}
+	constructor(arg1, arg2) {
+		let messageInput;
+		let details;
+		if (typeof arg1 === "string") {
+			messageInput = arg1;
+			details = arg2;
+		} else details = arg1;
+		const status = sanitizeStatusCode(details?.status || details?.statusCode || (details?.cause)?.status || (details?.cause)?.statusCode, 500);
+		const statusText = sanitizeStatusMessage(details?.statusText || details?.statusMessage || (details?.cause)?.statusText || (details?.cause)?.statusMessage);
+		const message = messageInput || details?.message || (details?.cause)?.message || details?.statusText || details?.statusMessage || [
+			"HTTPError",
+			status,
+			statusText
+		].filter(Boolean).join(" ");
+		super(message, { cause: details });
+		this.cause = details;
+		this.status = status;
+		this.statusText = statusText || void 0;
+		const rawHeaders = details?.headers || (details?.cause)?.headers;
+		this.headers = rawHeaders ? new Headers(rawHeaders) : void 0;
+		this.unhandled = details?.unhandled ?? (details?.cause)?.unhandled ?? void 0;
+		this.data = details?.data;
+		this.body = details?.body;
+	}
+	get statusCode() {
+		return this.status;
+	}
+	get statusMessage() {
+		return this.statusText;
+	}
+	toJSON() {
+		const unhandled = this.unhandled;
+		return {
+			status: this.status,
+			statusText: this.statusText,
+			unhandled,
+			message: unhandled ? "HTTPError" : this.message,
+			data: unhandled ? void 0 : this.data,
+			...unhandled ? void 0 : this.body
+		};
+	}
+};
+function isJSONSerializable(value, _type) {
+	if (value === null || value === void 0) return true;
+	if (_type !== "object") return _type === "boolean" || _type === "number" || _type === "string";
+	if (typeof value.toJSON === "function") return true;
+	if (Array.isArray(value)) return true;
+	if (typeof value.pipe === "function" || typeof value.pipeTo === "function") return false;
+	if (value instanceof NullProtoObj) return true;
+	const proto = Object.getPrototypeOf(value);
+	return proto === Object.prototype || proto === null;
+}
+var kNotFound = /* @__PURE__ */ Symbol.for("h3.notFound");
+var kHandled = /* @__PURE__ */ Symbol.for("h3.handled");
+function toResponse(val, event, config = {}) {
+	if (typeof val?.then === "function") return (val.catch?.((error) => error) || Promise.resolve(val)).then((resolvedVal) => toResponse(resolvedVal, event, config));
+	const response = prepareResponse(val, event, config);
+	if (typeof response?.then === "function") return toResponse(response, event, config);
+	const { onResponse } = config;
+	return onResponse ? Promise.resolve(onResponse(response, event)).then(() => response) : response;
+}
+var HTTPResponse = class {
+	#headers;
+	#init;
+	body;
+	constructor(body, init) {
+		this.body = body;
+		this.#init = init;
+	}
+	get status() {
+		return this.#init?.status || 200;
+	}
+	get statusText() {
+		return this.#init?.statusText || "OK";
+	}
+	get headers() {
+		return this.#headers ||= new Headers(this.#init?.headers);
+	}
+};
+function prepareResponse(val, event, config, nested) {
+	if (val === kHandled) return new NodeResponse(null);
+	if (val === kNotFound) val = new HTTPError({
+		status: 404,
+		message: `Cannot find any route matching [${event.req.method}] ${event.url}`
+	});
+	if (val && val instanceof Error) {
+		const isHTTPError = HTTPError.isError(val);
+		const error = isHTTPError ? val : new HTTPError(val);
+		if (!isHTTPError) {
+			error.unhandled = true;
+			if (val?.stack) error.stack = val.stack;
+		}
+		if (error.unhandled && !config.silent) console.error(error);
+		const { onError } = config;
+		const errHeaders = event[kEventRes]?.[kEventResErrHeaders];
+		return onError && !nested ? Promise.resolve(onError(error, event)).catch((error) => error).then((newVal) => prepareResponse(newVal ?? val, event, config, true)) : errorResponse(error, config.debug, errHeaders);
+	}
+	const preparedRes = event[kEventRes];
+	const preparedHeaders = preparedRes?.[kEventResHeaders];
+	event[kEventRes] = void 0;
+	if (!(val instanceof Response)) {
+		const res = prepareResponseBody(val, event, config);
+		const status = res.status || preparedRes?.status;
+		return new NodeResponse(nullBody(event.req.method, status) ? null : res.body, {
+			status,
+			statusText: res.statusText || preparedRes?.statusText,
+			headers: res.headers && preparedHeaders ? mergeHeaders$1(res.headers, preparedHeaders) : res.headers || preparedHeaders
+		});
+	}
+	if (!preparedHeaders || nested || !val.ok) return val;
+	try {
+		mergeHeaders$1(val.headers, preparedHeaders, val.headers);
+		return val;
+	} catch {
+		return new NodeResponse(nullBody(event.req.method, val.status) ? null : val.body, {
+			status: val.status,
+			statusText: val.statusText,
+			headers: mergeHeaders$1(val.headers, preparedHeaders)
+		});
+	}
+}
+function mergeHeaders$1(base, overrides, target = new Headers(base)) {
+	for (const [name, value] of overrides) if (name === "set-cookie") target.append(name, value);
+	else target.set(name, value);
+	return target;
+}
+var frozen = (name) => (...args) => {
+	throw new Error(`Headers are frozen (${name} ${args.join(", ")})`);
+};
+var FrozenHeaders = class extends Headers {
+	set = frozen("set");
+	append = frozen("append");
+	delete = frozen("delete");
+};
+var emptyHeaders = /* @__PURE__ */ new FrozenHeaders({ "content-length": "0" });
+var jsonHeaders = /* @__PURE__ */ new FrozenHeaders({ "content-type": "application/json;charset=UTF-8" });
+function prepareResponseBody(val, event, config) {
+	if (val === null || val === void 0) return {
+		body: "",
+		headers: emptyHeaders
+	};
+	const valType = typeof val;
+	if (valType === "string") return { body: val };
+	if (val instanceof Uint8Array) {
+		event.res.headers.set("content-length", val.byteLength.toString());
+		return { body: val };
+	}
+	if (val instanceof HTTPResponse || val?.constructor?.name === "HTTPResponse") return val;
+	if (isJSONSerializable(val, valType)) return {
+		body: JSON.stringify(val, void 0, config.debug ? 2 : void 0),
+		headers: jsonHeaders
+	};
+	if (valType === "bigint") return {
+		body: val.toString(),
+		headers: jsonHeaders
+	};
+	if (val instanceof Blob) {
+		const headers = new Headers({
+			"content-type": val.type,
+			"content-length": val.size.toString()
+		});
+		let filename = val.name;
+		if (filename) {
+			filename = encodeURIComponent(filename);
+			headers.set("content-disposition", `filename="${filename}"; filename*=UTF-8''${filename}`);
+		}
+		return {
+			body: val.stream(),
+			headers
+		};
+	}
+	if (valType === "symbol") return { body: val.toString() };
+	if (valType === "function") return { body: `${val.name}()` };
+	return { body: val };
+}
+function nullBody(method, status) {
+	return method === "HEAD" || status === 100 || status === 101 || status === 102 || status === 204 || status === 205 || status === 304;
+}
+function errorResponse(error, debug, errHeaders) {
+	let headers = error.headers ? mergeHeaders$1(jsonHeaders, error.headers) : new Headers(jsonHeaders);
+	if (errHeaders) headers = mergeHeaders$1(headers, errHeaders);
+	return new NodeResponse(JSON.stringify({
+		...error.toJSON(),
+		stack: debug && error.stack ? error.stack.split("\n").map((l) => l.trim()) : void 0
+	}, void 0, debug ? 2 : void 0), {
+		status: error.status,
+		statusText: error.statusText,
+		headers
+	});
+}
+var GLOBAL_EVENT_STORAGE_KEY = Symbol.for("tanstack-start:event-storage");
+var globalObj = globalThis;
+if (!globalObj[GLOBAL_EVENT_STORAGE_KEY]) globalObj[GLOBAL_EVENT_STORAGE_KEY] = new AsyncLocalStorage();
+var eventStorage = globalObj[GLOBAL_EVENT_STORAGE_KEY];
+function isPromiseLike(value) {
+	return (typeof value === "object" || typeof value === "function") && value !== null && typeof value.then === "function";
+}
+function getSetCookieValues(headers) {
+	const headersWithSetCookie = headers;
+	if (typeof headersWithSetCookie.getSetCookie === "function") return headersWithSetCookie.getSetCookie();
+	const value = headers.get("set-cookie");
+	return value ? [value] : [];
+}
+function mergeEventResponseHeaders(response, event) {
+	if (response.ok) return;
+	const eventSetCookies = getSetCookieValues(event.res.headers);
+	if (eventSetCookies.length === 0) return;
+	const responseSetCookies = getSetCookieValues(response.headers);
+	response.headers.delete("set-cookie");
+	for (const cookie of responseSetCookies) response.headers.append("set-cookie", cookie);
+	for (const cookie of eventSetCookies) response.headers.append("set-cookie", cookie);
+}
+function finalizeResponse(value, event) {
+	const response = ensureResponse(value);
+	mergeEventResponseHeaders(response, event);
+	return response;
+}
+function finalizeMaybeResponse(value, event) {
+	if (isPromiseLike(value)) return Promise.resolve(value).then((resolved) => finalizeResponse(resolved, event), (error) => finalizeResponse(handleResponseError(error), event));
+	return finalizeResponse(value, event);
+}
+function ensureResponse(value) {
+	if (value instanceof Response) return value;
+	return new Response("Internal Server Error", { status: 500 });
+}
+function handleResponseError(error) {
+	if (error instanceof Response) return error;
+	if (error instanceof Error) throw error;
+	return new Response("Internal Server Error", { status: 500 });
+}
+function requestHandler(handler) {
+	return (request, requestOpts) => {
+		let h3Event;
+		try {
+			h3Event = new H3Event(request);
+		} catch (error) {
+			if (error instanceof URIError) return new Response(null, {
+				status: 400,
+				statusText: "Bad Request"
+			});
+			throw error;
+		}
+		let response;
+		try {
+			response = eventStorage.run({ h3Event }, () => handler(request, requestOpts));
+		} catch (error) {
+			response = handleResponseError(error);
+		}
+		return toResponse(finalizeMaybeResponse(response, h3Event), h3Event);
+	};
+}
+function getH3Event() {
+	const event = eventStorage.getStore();
+	if (!event) throw new Error(`No StartEvent found in AsyncLocalStorage. Make sure you are using the function within the server runtime.`);
+	return event.h3Event;
+}
+function getResponse() {
+	return getH3Event().res;
+}
+var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
+/**
+* @description Returns the router manifest data that should be sent to the client.
+* This includes only the assets and preloads for the current route and any
+* special assets that are needed for the client. It does not include relationships
+* between routes or any other data that is not needed for the client.
+*
+* @param matchedRoutes - In dev mode, the matched routes are used to build
+* the dev styles URL for route-scoped CSS collection.
+*/
+async function getStartManifest(matchedRoutes) {
+	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-CR8ddxHx.mjs");
+	const startManifest = tsrStartManifest();
+	let routes = startManifest.routes;
+	routes[rootRouteId];
+	const manifestRoutes = {};
+	for (const k in routes) {
+		const v = routes[k];
+		const result = {};
+		if (v.preloads && v.preloads.length > 0) result.preloads = v.preloads;
+		if (v.scripts && v.scripts.length > 0) result.scripts = v.scripts;
+		if (v.css?.length) result.css = v.css;
+		if (result.preloads || result.scripts || result.css) manifestRoutes[k] = result;
+	}
+	return {
+		...startManifest.scriptFormat ? { scriptFormat: startManifest.scriptFormat } : {},
+		...startManifest.inlineCss ? { inlineCss: startManifest.inlineCss } : {},
+		routes: manifestRoutes
+	};
+}
+/** Start's serialization adapters followed by `routerPlugins`. */
+function getSerovalPlugins(routerPlugins) {
+	return [...(getStartOptions()?.serializationAdapters)?.map(makeSerovalPlugin) ?? [], ...routerPlugins];
+}
+/**
+* Binary frame protocol for multiplexing JSON and raw streams over HTTP.
+*
+* Frame format: [type:1][streamId:4][length:4][payload:length]
+* - type: 1 byte - frame type (JSON, CHUNK, END, ERROR)
+* - streamId: 4 bytes big-endian uint32 - stream identifier
+* - length: 4 bytes big-endian uint32 - payload length
+* - payload: variable length bytes
+*/
+/** Cached TextEncoder for frame encoding */
+var textEncoder$1 = new TextEncoder();
+/** Shared empty payload for END frames - avoids allocation per call */
+var EMPTY_PAYLOAD = /* @__PURE__ */ new Uint8Array(0);
+var MAX_ERROR_MESSAGE_CODE_UNITS = 4096;
+/**
+* Encodes a single frame with header and payload.
+*/
+function encodeFrame(type, streamId, payload) {
+	if (payload.byteLength > 16777216) throw new RangeError(`Frame payload exceeds ${MAX_FRAME_PAYLOAD_SIZE} bytes`);
+	const frame = new Uint8Array(9 + payload.length);
+	frame[0] = type;
+	frame[1] = streamId >>> 24 & 255;
+	frame[2] = streamId >>> 16 & 255;
+	frame[3] = streamId >>> 8 & 255;
+	frame[4] = streamId & 255;
+	frame[5] = payload.length >>> 24 & 255;
+	frame[6] = payload.length >>> 16 & 255;
+	frame[7] = payload.length >>> 8 & 255;
+	frame[8] = payload.length & 255;
+	frame.set(payload, 9);
+	return frame;
+}
+/** Encodes an error message payload, truncated to a bounded length. */
+function encodeErrorPayload(error) {
+	const originalMessage = error instanceof Error ? error.message : String(error ?? "Unknown error");
+	const message = originalMessage.length > MAX_ERROR_MESSAGE_CODE_UNITS ? `${originalMessage.slice(0, MAX_ERROR_MESSAGE_CODE_UNITS)}…` : originalMessage;
+	return textEncoder$1.encode(message);
+}
+/**
+* Creates a multiplexed ReadableStream from serialized response records.
+*
+* A record's JSON frame is admitted before any raw stream referenced by that
+* record starts. Raw streams from admitted records are pumped concurrently.
+* The caller bounds the stream count before records reach this function.
+*/
+function createMultiplexedStream(recordStream, options = {}) {
+	let controller;
+	let stopped = false;
+	let activePumps = 0;
+	let wakeDemand;
+	let admission;
+	const readers = /* @__PURE__ */ new Set();
+	const pendingRawStreams = /* @__PURE__ */ new Set();
+	const abortOutput = () => errorOutput(options.signal?.reason);
+	const wakeAdmission = () => {
+		const wake = wakeDemand;
+		wakeDemand = void 0;
+		wake?.();
+	};
+	const cancelReader = (reader, reason) => {
+		reader.cancel(reason).catch(() => {});
+	};
+	const cancelStream = (stream, reason) => {
+		stream.cancel(reason).catch(() => {});
+	};
+	const stop = (reason) => {
+		if (stopped) return false;
+		stopped = [reason];
+		options.signal?.removeEventListener("abort", abortOutput);
+		wakeAdmission();
+		for (const reader of readers) cancelReader(reader, reason);
+		for (const stream of pendingRawStreams) cancelStream(stream, reason);
+		pendingRawStreams.clear();
+		return true;
+	};
+	const errorOutput = (error) => {
+		if (!stop(error)) return;
+		try {
+			controller.error(error);
+		} catch {}
+	};
+	const waitForDemand = async () => {
+		while (!stopped && (controller.desiredSize ?? 0) <= 0) await new Promise((resolve) => {
+			wakeDemand = resolve;
+		});
+		return !stopped;
+	};
+	const admitFrame = (type, streamId, payload) => {
+		if (stopped) return false;
+		if (!admission && (controller.desiredSize ?? 0) > 0) {
+			controller.enqueue(encodeFrame(type, streamId, payload));
+			return true;
+		}
+		const runAdmission = async () => {
+			if (!await waitForDemand()) return false;
+			controller.enqueue(encodeFrame(type, streamId, payload));
+			return true;
+		};
+		const result = admission ? admission.then(runAdmission) : runAdmission();
+		const clearAdmission = () => {
+			if (admission === tail) admission = void 0;
+		};
+		const tail = result.then(clearAdmission, clearAdmission);
+		admission = tail;
+		return result;
+	};
+	const maybeClose = () => {
+		if (activePumps !== 0 || !stop()) return;
+		try {
+			controller.close();
+		} catch {}
+	};
+	const startPump = (pump) => {
+		activePumps++;
+		pump().then(() => {
+			activePumps--;
+			maybeClose();
+		}, (error) => {
+			activePumps--;
+			errorOutput(error);
+		});
+	};
+	async function pumpRawStream(streamId, stream) {
+		const reader = stream.getReader();
+		readers.add(reader);
+		try {
+			while (!stopped) {
+				const { done, value } = await reader.read();
+				if (stopped) return;
+				if (done) {
+					const frameAdmission = admitFrame(2, streamId, EMPTY_PAYLOAD);
+					if (frameAdmission !== true) await frameAdmission;
+					return;
+				}
+				if (!(value instanceof Uint8Array)) throw new TypeError("RawStream chunks must be Uint8Array");
+				let offset = 0;
+				do {
+					const frameAdmission = admitFrame(1, streamId, value.byteLength <= 16777216 ? value : value.subarray(offset, offset + MAX_FRAME_PAYLOAD_SIZE));
+					if (frameAdmission !== true && (frameAdmission === false || !await frameAdmission)) return;
+					offset += MAX_FRAME_PAYLOAD_SIZE;
+				} while (offset < value.byteLength);
+			}
+		} catch (error) {
+			if (!stopped) {
+				const frameAdmission = admitFrame(3, streamId, encodeErrorPayload(error));
+				if (frameAdmission !== true) await frameAdmission;
+			}
+		} finally {
+			readers.delete(reader);
+			reader.releaseLock();
+		}
+	}
+	async function pumpRecords() {
+		const reader = recordStream.getReader();
+		readers.add(reader);
+		try {
+			while (!stopped) {
+				const { done, value } = await reader.read();
+				if (stopped) {
+					if (!done) for (const registration of value.rawStreams) cancelStream(registration.stream, stopped[0]);
+					return;
+				}
+				if (done) return;
+				for (const registration of value.rawStreams) pendingRawStreams.add(registration.stream);
+				const frameAdmission = admitFrame(0, 0, value.json);
+				if (frameAdmission !== true && (frameAdmission === false || !await frameAdmission)) return;
+				for (const registration of value.rawStreams) {
+					pendingRawStreams.delete(registration.stream);
+					startPump(pumpRawStream.bind(void 0, registration.id, registration.stream));
+				}
+			}
+		} catch (error) {
+			if (!stopped) errorOutput(error);
+		} finally {
+			readers.delete(reader);
+			reader.releaseLock();
+		}
+	}
+	return new ReadableStream({
+		start(ctrl) {
+			controller = ctrl;
+			if (options.signal?.aborted) {
+				cancelStream(recordStream, options.signal.reason);
+				errorOutput(options.signal.reason);
+				return;
+			}
+			options.signal?.addEventListener("abort", abortOutput, { once: true });
+			startPump(pumpRecords);
+		},
+		pull() {
+			wakeAdmission();
+		},
+		cancel(reason) {
+			if (stop(reason)) options.onCancel?.(reason);
+		}
+	});
+}
+var serovalPlugins = void 0;
+var FORM_DATA_CONTENT_TYPES = ["multipart/form-data", "application/x-www-form-urlencoded"];
+var MAX_PAYLOAD_SIZE = 1e6;
+var MAX_PENDING_SERIALIZATION_RECORDS = 1024;
+var MAX_PENDING_SERIALIZATION_BYTES = 33554432;
+var textEncoder = new TextEncoder();
+function encodeSerializationRecord(value) {
+	return textEncoder.encode(JSON.stringify(value));
+}
+function exceedsPendingSerializationLimit(record, recordCount, pendingBytes) {
+	return recordCount >= MAX_PENDING_SERIALIZATION_RECORDS || pendingBytes + record.byteLength > MAX_PENDING_SERIALIZATION_BYTES;
+}
+function runSerializationCleanup(dispose) {
+	try {
+		dispose();
+	} catch {}
+}
+function cancelRawStream(stream, reason) {
+	stream.cancel(reason).catch(() => {});
+}
+var handleServerAction = async ({ request, context, serverFnId }) => {
+	const methodUpper = request.method.toUpperCase();
+	const url = new URL(request.url);
+	const action = await getServerFnById(serverFnId, { origin: "client" });
+	if (action.method && methodUpper !== action.method) return new Response(`expected ${action.method} method. Got ${methodUpper}`, {
+		status: 405,
+		headers: { Allow: action.method }
+	});
+	const isServerFn = request.headers.get("x-tsr-serverFn") === "true";
+	serovalPlugins ??= getSerovalPlugins(defaultSerovalDeserializerPlugins);
+	const contentType = request.headers.get("Content-Type");
+	try {
+		let res;
+		if (FORM_DATA_CONTENT_TYPES.some((type) => contentType && contentType.includes(type))) {
+			if (methodUpper === "GET") invariant();
+			const formData = await request.formData();
+			const serializedContext = formData.get(TSS_FORMDATA_CONTEXT);
+			formData.delete(TSS_FORMDATA_CONTEXT);
+			const params = {
+				context,
+				data: formData,
+				method: methodUpper
+			};
+			if (typeof serializedContext === "string") try {
+				const deserializedContext = fromJSON(JSON.parse(serializedContext), { plugins: serovalPlugins });
+				if (typeof deserializedContext === "object" && deserializedContext) params.context = safeObjectMerge(deserializedContext, context);
+			} catch (e) {}
+			res = await action(params);
+		} else if (methodUpper === "GET") {
+			const payloadParam = url.searchParams.get("payload");
+			if (payloadParam && payloadParam.length > MAX_PAYLOAD_SIZE) throw new Error("Payload too large");
+			const payload = payloadParam ? fromJSON(JSON.parse(payloadParam), { plugins: serovalPlugins }) : void 0;
+			res = await action({
+				data: payload?.data,
+				context: safeObjectMerge(payload?.context, context),
+				method: methodUpper
+			});
+		} else {
+			const payload = contentType?.includes("application/json") ? fromJSON(await request.json(), { plugins: serovalPlugins }) : void 0;
+			res = await action({
+				data: payload?.data,
+				context: safeObjectMerge(payload?.context, context),
+				method: methodUpper
+			});
+		}
+		const unwrapped = res.error !== void 0 ? res.error : res.result;
+		if (isNotFound(res)) res = isNotFoundResponse(res);
+		if (!isServerFn && (unwrapped instanceof Response || unwrapped === null || typeof unwrapped !== "object")) return unwrapped;
+		if (unwrapped instanceof Response) {
+			if (isRedirect(unwrapped)) return unwrapped;
+			unwrapped.headers.set(X_TSS_RAW_RESPONSE, "true");
+			return unwrapped;
+		}
+		return serializeResult(res, request.signal, serovalPlugins);
+	} catch (error) {
+		if (error instanceof Response) return error;
+		if (isNotFound(error)) return isNotFoundResponse(error);
+		console.error("Server Fn Error!", error);
+		const serializedError = JSON.stringify(await toCrossJSONAsync(error, {
+			refs: /* @__PURE__ */ new Map(),
+			plugins: serovalPlugins
+		}));
+		const response = getResponse();
+		const headers = {
+			"Content-Type": "application/json",
+			[X_TSS_SERIALIZED]: "true"
+		};
+		try {
+			return new Response(serializedError, {
+				status: response.status ?? 500,
+				statusText: response.statusText,
+				headers
+			});
+		} catch {
+			return new Response(serializedError, {
+				status: 500,
+				statusText: "",
+				headers
+			});
+		}
+	}
+};
+/**
+* Serializes a server-function result. A result that Seroval completes
+* synchronously without RawStreams becomes plain JSON; everything else is a
+* framed response whose records and raw streams are multiplexed in order.
+*/
+function serializeResult(res, signal, plugins) {
+	const alsResponse = getResponse();
+	const initialRecords = [];
+	let initialBytes = 0;
+	const pendingRawStreams = [];
+	let done = false;
+	let initialParsed = false;
+	let serializationFailure;
+	let disposeSerialization;
+	let onParse = (value, initial) => {
+		if (serializationFailure) return;
+		initialParsed ||= initial;
+		const record = encodeSerializationRecord(value);
+		if (exceedsPendingSerializationLimit(record, initialRecords.length, initialBytes)) {
+			serializationFailure = [/* @__PURE__ */ new Error("Server function serialization exceeded its pending output limit")];
+			return;
+		}
+		initialRecords.push(record);
+		initialBytes += record.byteLength;
+	};
+	let onDone = () => {
+		if (initialParsed) done = true;
+	};
+	let onError = (error) => {
+		serializationFailure ??= [error];
+	};
+	const dispose = toCrossJSONStream(res, {
+		refs: /* @__PURE__ */ new Map(),
+		plugins: [/* @__PURE__ */ createRawStreamRPCPlugin((id, stream) => {
+			if (serializationFailure) {
+				cancelRawStream(stream, serializationFailure[0]);
+				return;
+			}
+			if (id > 1024) {
+				const error = /* @__PURE__ */ new Error(`Too many raw streams in framed response (max ${MAX_FRAMED_STREAMS})`);
+				cancelRawStream(stream, error);
+				onError(error);
+				return;
+			}
+			pendingRawStreams.push({
+				id,
+				stream
+			});
+		}), ...plugins],
+		onParse(value, initial) {
+			onParse(value, initial);
+		},
+		onDone() {
+			onDone();
+		},
+		onError: (error) => {
+			onError(error);
+		}
+	});
+	if (serializationFailure) {
+		runSerializationCleanup(dispose);
+		for (const registration of pendingRawStreams) cancelRawStream(registration.stream, serializationFailure[0]);
+		throw serializationFailure[0];
+	}
+	if (!done) disposeSerialization = dispose;
+	if (done && pendingRawStreams.length === 0 && initialRecords.length === 1) return new Response(initialRecords[0], {
+		status: alsResponse.status,
+		statusText: alsResponse.statusText,
+		headers: {
+			"Content-Type": "application/json",
+			[X_TSS_SERIALIZED]: "true"
+		}
+	});
+	if (done && initialRecords.length === 1) {
+		const json = initialRecords[0];
+		if (json.byteLength > 16777216) {
+			const error = /* @__PURE__ */ new Error("Server function serialization exceeded its pending output limit");
+			for (const registration of pendingRawStreams) cancelRawStream(registration.stream, error);
+			throw error;
+		}
+		const rawStreams = pendingRawStreams.splice(0);
+		initialRecords.length = 0;
+		return createFramedResponse(new ReadableStream({
+			start(controller) {
+				controller.enqueue({
+					json,
+					rawStreams
+				});
+				controller.close();
+			},
+			cancel(reason) {
+				for (const registration of rawStreams) cancelRawStream(registration.stream, reason);
+			}
+		}), { signal });
+	}
+	const { readable, writable } = new TransformStream();
+	const writer = writable.getWriter();
+	const recordAbortController = new AbortController();
+	let pendingBytes = 0;
+	const pendingRecords = /* @__PURE__ */ new Set();
+	const abortRecordStream = (error) => {
+		if (serializationFailure) return;
+		serializationFailure = [error];
+		const disposeCurrentSerialization = disposeSerialization;
+		disposeSerialization = void 0;
+		for (const registration of pendingRawStreams.splice(0)) cancelRawStream(registration.stream, error);
+		for (const record of pendingRecords) for (const registration of record.rawStreams) cancelRawStream(registration.stream, error);
+		pendingRecords.clear();
+		recordAbortController.abort(error);
+		writer.abort(error).catch(() => {});
+		if (disposeCurrentSerialization) runSerializationCleanup(disposeCurrentSerialization);
+	};
+	const writeRecord = (json, rawStreams) => {
+		if (serializationFailure) {
+			for (const registration of rawStreams) cancelRawStream(registration.stream, serializationFailure[0]);
+			return false;
+		}
+		if (json.byteLength > 16777216 || exceedsPendingSerializationLimit(json, pendingRecords.size, pendingBytes)) {
+			const error = /* @__PURE__ */ new Error("Server function serialization exceeded its pending output limit");
+			for (const registration of rawStreams) cancelRawStream(registration.stream, error);
+			onError(error);
+			return false;
+		}
+		pendingBytes += json.byteLength;
+		const record = {
+			json,
+			rawStreams
+		};
+		pendingRecords.add(record);
+		writer.write(record).then(() => {
+			pendingRecords.delete(record);
+			pendingBytes -= json.byteLength;
+		}, (error) => {
+			const stillOwned = pendingRecords.delete(record);
+			pendingBytes -= json.byteLength;
+			if (stillOwned) for (const registration of rawStreams) cancelRawStream(registration.stream, error);
+		});
+		return true;
+	};
+	onParse = (value) => {
+		if (serializationFailure) return;
+		writeRecord(encodeSerializationRecord(value), pendingRawStreams.splice(0));
+	};
+	onDone = () => {
+		if (serializationFailure) return;
+		disposeSerialization = void 0;
+		writer.close().catch(() => {});
+	};
+	onError = (error) => {
+		abortRecordStream(error);
+	};
+	const initialRawStreams = pendingRawStreams.splice(0);
+	for (let index = 0; index < initialRecords.length; index++) {
+		const isLast = index === initialRecords.length - 1;
+		if (!writeRecord(initialRecords[index], isLast ? initialRawStreams : [])) {
+			if (!isLast) for (const registration of initialRawStreams) cancelRawStream(registration.stream, serializationFailure[0]);
+			initialRecords.length = 0;
+			throw serializationFailure[0];
+		}
+	}
+	initialRecords.length = 0;
+	if (done) onDone();
+	writer.closed.catch((error) => {
+		abortRecordStream(error);
+	});
+	return createFramedResponse(readable, {
+		signal: AbortSignal.any([recordAbortController.signal, signal]),
+		onCancel: abortRecordStream
+	});
+	function createFramedResponse(records, options) {
+		const multiplexedStream = createMultiplexedStream(records, options);
+		try {
+			return new Response(multiplexedStream, {
+				status: alsResponse.status,
+				statusText: alsResponse.statusText,
+				headers: {
+					"Content-Type": TSS_CONTENT_TYPE_FRAMED_VERSIONED,
+					[X_TSS_SERIALIZED]: "true"
+				}
+			});
+		} catch (error) {
+			cancelRawStream(multiplexedStream, error);
+			throw error;
+		}
+	}
+}
+function isNotFoundResponse(error) {
+	const { headers, ...rest } = error;
+	const response = new Response(JSON.stringify(rest), {
+		status: 404,
+		headers
+	});
+	response.headers.set("Content-Type", "application/json");
+	return response;
+}
+var LINK_PARAM_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+var PRELOAD_AS_VALUES = /* @__PURE__ */ new Set([
+	"fetch",
+	"font",
+	"image",
+	"script",
+	"style",
+	"track"
+]);
+function buildLinkParam(name, value) {
+	if (value === void 0) return name;
+	if (LINK_PARAM_TOKEN_RE.test(value)) return `${name}=${value}`;
+	return `${name}=${JSON.stringify(value)}`;
+}
+function serializeEarlyHint(hint) {
+	const parts = [`<${hint.href}>`, buildLinkParam("rel", hint.rel)];
+	if (hint.as) parts.push(buildLinkParam("as", hint.as));
+	if (hint.crossOrigin !== void 0) parts.push(buildLinkParam("crossorigin", hint.crossOrigin || void 0));
+	if (hint.type) parts.push(buildLinkParam("type", hint.type));
+	if (hint.integrity) parts.push(buildLinkParam("integrity", hint.integrity));
+	if (hint.referrerPolicy) parts.push(buildLinkParam("referrerpolicy", hint.referrerPolicy));
+	if (hint.fetchPriority) parts.push(buildLinkParam("fetchpriority", hint.fetchPriority));
+	return parts.join("; ");
+}
+function getStringAttr(attrs, name, fallbackName) {
+	const value = attrs?.[name] ?? (fallbackName ? attrs?.[fallbackName] : void 0);
+	return typeof value === "string" ? value : void 0;
+}
+function getPreloadAs(attrs) {
+	const as = getStringAttr(attrs, "as");
+	return as && PRELOAD_AS_VALUES.has(as) ? as : void 0;
+}
+function addEarlyHintFetchAttrs(hint, attrs) {
+	const crossOrigin = getStringAttr(attrs, "crossOrigin", "crossorigin");
+	const type = getStringAttr(attrs, "type");
+	const integrity = getStringAttr(attrs, "integrity");
+	const referrerPolicy = getStringAttr(attrs, "referrerPolicy", "referrerpolicy");
+	const fetchPriority = getStringAttr(attrs, "fetchPriority", "fetchpriority");
+	if (crossOrigin !== void 0) hint.crossOrigin = crossOrigin;
+	if (type) hint.type = type;
+	if (integrity) hint.integrity = integrity;
+	if (referrerPolicy) hint.referrerPolicy = referrerPolicy;
+	if (fetchPriority) hint.fetchPriority = fetchPriority;
+}
+function linkAttrsToEarlyHint(attrs) {
+	const href = getStringAttr(attrs, "href");
+	const rel = getStringAttr(attrs, "rel");
+	if (!href || !rel) return void 0;
+	const relTokens = rel.split(/\s+/);
+	let hintRel;
+	let hintAs;
+	if (relTokens.includes("modulepreload")) {
+		hintRel = "modulepreload";
+		hintAs = "script";
+	} else if (relTokens.includes("stylesheet")) {
+		hintRel = "preload";
+		hintAs = "style";
+	} else if (relTokens.includes("preload")) {
+		hintAs = getPreloadAs(attrs);
+		if (!hintAs) return void 0;
+		hintRel = "preload";
+	} else if (relTokens.includes("preconnect")) {
+		hintRel = "preconnect";
+		hintAs = void 0;
+	} else if (relTokens.includes("dns-prefetch")) {
+		hintRel = "dns-prefetch";
+		hintAs = void 0;
+	}
+	if (!hintRel) return void 0;
+	const hint = {
+		href,
+		rel: hintRel
+	};
+	if (hintAs) hint.as = hintAs;
+	addEarlyHintFetchAttrs(hint, attrs);
+	return hint;
+}
+function collectStaticHintsFromManifest(manifest, matchedRoutes) {
+	const hints = [];
+	for (const route of matchedRoutes) {
+		const routeManifest = manifest.routes[route.id];
+		if (!routeManifest) continue;
+		for (const link of routeManifest.preloads ?? []) {
+			const attrs = getScriptPreloadAttrs(manifest, link);
+			const hint = {
+				href: attrs.href,
+				rel: attrs.rel,
+				as: "script"
+			};
+			if (attrs.crossOrigin !== void 0) hint.crossOrigin = attrs.crossOrigin;
+			hints.push(hint);
+		}
+		for (const link of routeManifest.css ?? []) {
+			const stylesheetHref = getStylesheetHref(link);
+			if (manifest.inlineCss?.styles[stylesheetHref] !== void 0) continue;
+			const resolvedLink = resolveManifestCssLink(link);
+			const hint = {
+				href: stylesheetHref,
+				rel: "preload",
+				as: "style"
+			};
+			if (resolvedLink.crossOrigin !== void 0) hint.crossOrigin = resolvedLink.crossOrigin;
+			hints.push(hint);
+		}
+	}
+	return hints;
+}
+function collectDynamicHintsFromMatches(matches) {
+	const hints = [];
+	for (const match of matches) {
+		const links = match.links;
+		if (!Array.isArray(links)) continue;
+		for (const link of links) {
+			const hint = linkAttrsToEarlyHint(link);
+			if (hint) hints.push(hint);
+		}
+	}
+	return hints;
+}
+function createEarlyHintsEvent(opts) {
+	const nextHints = [];
+	const nextLinks = [];
+	for (const hint of opts.hints) {
+		const link = serializeEarlyHint(hint);
+		if (opts.sentLinks.has(link)) continue;
+		opts.sentLinks.add(link);
+		opts.sentHints.push(hint);
+		nextHints.push(hint);
+		nextLinks.push(link);
+	}
+	if (!nextHints.length && opts.phase !== "dynamic") return void 0;
+	return {
+		phase: opts.phase,
+		hints: nextHints,
+		links: nextLinks,
+		allHints: opts.sentHints.slice(),
+		allLinks: Array.from(opts.sentLinks)
+	};
+}
+function createResponseLinkHeaderEntries(opts) {
+	for (const hint of opts.hints) {
+		const link = serializeEarlyHint(hint);
+		if (opts.sentLinks.has(link)) continue;
+		opts.sentLinks.add(link);
+		opts.entries.push({
+			phase: opts.phase,
+			hint,
+			link
+		});
+	}
+}
+function getResponseLinkHeaderEntries(opts) {
+	if (!opts.filter) return opts.entries.map((entry) => entry.link);
+	try {
+		const links = [];
+		for (const entry of opts.entries) if (opts.filter(entry)) links.push(entry.link);
+		return links;
+	} catch (err) {
+		console.error("Error filtering response Link headers:", err);
+		return [];
+	}
+}
+function notifyEarlyHints(phase, event, onEarlyHints) {
+	try {
+		const result = onEarlyHints(event);
+		if (result) Promise.resolve(result).catch((err) => {
+			console.error(`Error sending ${phase} early hints:`, err);
+		});
+	} catch (err) {
+		console.error(`Error sending ${phase} early hints:`, err);
+	}
+}
+function getResponseLinkHeaderFilter(responseLinkHeader) {
+	if (typeof responseLinkHeader !== "object") return;
+	return responseLinkHeader.filter;
+}
+function appendResponseLinkHeaders(opts) {
+	for (const link of getResponseLinkHeaderEntries(opts)) opts.responseHeaders.append("Link", link);
+}
+function collectResponseLinkHeaderEntries(opts) {
+	for (let index = 0; index < opts.event.hints.length; index++) opts.entries.push({
+		phase: opts.phase,
+		hint: opts.event.hints[index],
+		link: opts.event.links[index]
+	});
+}
+function collectEarlyHintsPhase(opts) {
+	const event = opts.onEarlyHints ? createEarlyHintsEvent({
+		phase: opts.phase,
+		hints: opts.hints,
+		sentLinks: opts.sentLinks,
+		sentHints: opts.sentHints
+	}) : void 0;
+	if (event) notifyEarlyHints(opts.phase, event, opts.onEarlyHints);
+	if (!opts.responseLinkHeaderEntries) return;
+	if (event) {
+		collectResponseLinkHeaderEntries({
+			phase: opts.phase,
+			event,
+			entries: opts.responseLinkHeaderEntries
+		});
+		return;
+	}
+	createResponseLinkHeaderEntries({
+		phase: opts.phase,
+		hints: opts.hints,
+		sentLinks: opts.sentLinks,
+		entries: opts.responseLinkHeaderEntries
+	});
+}
+function createEarlyHintsCollector(opts) {
+	if (!opts?.onEarlyHints && !opts?.responseLinkHeader) return;
+	const sentLinks = /* @__PURE__ */ new Set();
+	const sentHints = opts.onEarlyHints ? new Array() : void 0;
+	const responseLinkHeaderEntries = opts.responseLinkHeader ? new Array() : void 0;
+	const responseLinkHeaderFilter = getResponseLinkHeaderFilter(opts.responseLinkHeader);
+	return {
+		collectStatic: ({ manifest, matchedRoutes }) => {
+			if (!matchedRoutes?.length) return;
+			collectEarlyHintsPhase({
+				phase: "static",
+				hints: collectStaticHintsFromManifest(manifest, matchedRoutes),
+				sentLinks,
+				sentHints,
+				onEarlyHints: opts.onEarlyHints,
+				responseLinkHeaderEntries
+			});
+		},
+		collectDynamic: (matches) => {
+			collectEarlyHintsPhase({
+				phase: "dynamic",
+				hints: collectDynamicHintsFromMatches(matches),
+				sentLinks,
+				sentHints,
+				onEarlyHints: opts.onEarlyHints,
+				responseLinkHeaderEntries
+			});
+		},
+		appendResponseHeaders: (headers) => {
+			if (!responseLinkHeaderEntries?.length) return;
+			appendResponseLinkHeaders({
+				responseHeaders: headers,
+				entries: responseLinkHeaderEntries,
+				filter: responseLinkHeaderFilter
+			});
+		}
+	};
+}
+function normalizeTransformAssetResult(result) {
+	if (typeof result === "string") return { href: result };
+	return result;
+}
+function escapeCssString(value) {
+	return value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"").replace(/\n/g, "\\a ").replace(/\r/g, "\\d ").replace(/\f/g, "\\c ");
+}
+async function transformInlineCssTemplate(options) {
+	const { strings, urls } = options.template;
+	if (strings.length !== urls.length + 1) throw new Error(`TanStack Start inlineCss template for ${options.stylesheetHref} is invalid`);
+	let css = strings[0];
+	for (let index = 0; index < urls.length; index++) {
+		const transformed = normalizeTransformAssetResult(await options.transformFn({
+			kind: "css-url",
+			url: urls[index],
+			stylesheetHref: options.stylesheetHref
+		}));
+		css += escapeCssString(transformed.href) + strings[index + 1];
+	}
+	return css;
+}
+async function transformInlineCssStyles(inlineCss, transformFn) {
+	const transformedStyles = {};
+	const transformedEntries = await Promise.all(Object.entries(inlineCss.styles).map(async ([stylesheetHref, css]) => {
+		const template = inlineCss.templates?.[stylesheetHref];
+		return [stylesheetHref, template ? await transformInlineCssTemplate({
+			stylesheetHref,
+			template,
+			transformFn
+		}) : css];
+	}));
+	for (const [stylesheetHref, css] of transformedEntries) transformedStyles[stylesheetHref] = css;
+	return {
+		styles: transformedStyles,
+		...inlineCss.templates ? { templates: inlineCss.templates } : {}
+	};
+}
+function resolveTransformAssetsCrossOrigin(config, kind) {
+	if (!config) return void 0;
+	if (typeof config === "string") return config;
+	return config[kind];
+}
+function isObjectShorthand(transform) {
+	return "prefix" in transform;
+}
+function resolveTransformAssetsConfig(transform) {
+	if (typeof transform === "string") {
+		const prefix = transform;
+		return {
+			type: "transform",
+			transformFn: ({ url }) => ({ href: `${prefix}${url}` }),
+			cache: true
+		};
+	}
+	if (typeof transform === "function") return {
+		type: "transform",
+		transformFn: transform,
+		cache: true
+	};
+	if (isObjectShorthand(transform)) {
+		const { prefix, crossOrigin } = transform;
+		return {
+			type: "transform",
+			transformFn: ({ url, kind }) => {
+				const href = `${prefix}${url}`;
+				if (kind === "css-url") return { href };
+				const co = resolveTransformAssetsCrossOrigin(crossOrigin, kind);
+				return co ? {
+					href,
+					crossOrigin: co
+				} : { href };
+			},
+			cache: true
+		};
+	}
+	if ("createTransform" in transform && transform.createTransform) return {
+		type: "createTransform",
+		createTransform: transform.createTransform,
+		cache: transform.cache !== false
+	};
+	return {
+		type: "transform",
+		transformFn: typeof transform.transform === "string" ? (({ url }) => ({ href: `${transform.transform}${url}` })) : transform.transform,
+		cache: transform.cache !== false
+	};
+}
+function assignManifestLink(link, next) {
+	if (typeof link === "string") return next.crossOrigin ? next : next.href;
+	const nextLink = {
+		...link,
+		href: next.href
+	};
+	if (next.crossOrigin) nextLink.crossOrigin = next.crossOrigin;
+	else delete nextLink.crossOrigin;
+	return nextLink;
+}
+async function transformManifestAssets(source, transformFn, _opts) {
+	const manifest = structuredClone(source);
+	const inlineCssEnabled = _opts?.inlineCss !== false;
+	const scriptTransforms = /* @__PURE__ */ new Map();
+	const transformScript = (url) => {
+		const cached = scriptTransforms.get(url);
+		if (cached) return cached;
+		const transformed = Promise.resolve(transformFn({
+			url,
+			kind: "script"
+		})).then(normalizeTransformAssetResult);
+		scriptTransforms.set(url, transformed);
+		return transformed;
+	};
+	if (!inlineCssEnabled) delete manifest.inlineCss;
+	else if (manifest.inlineCss) manifest.inlineCss = await transformInlineCssStyles(manifest.inlineCss, transformFn);
+	for (const route of Object.values(manifest.routes)) {
+		if (route.preloads?.length) route.preloads = await Promise.all(route.preloads.map(async (link) => {
+			const result = await transformScript(resolveManifestAssetLink(link).href);
+			return assignManifestLink(link, {
+				href: result.href,
+				crossOrigin: result.crossOrigin
+			});
+		}));
+		if (route.css?.length && !manifest.inlineCss) route.css = await Promise.all(route.css.map(async (link) => {
+			const result = normalizeTransformAssetResult(await transformFn({
+				url: resolveManifestCssLink(link).href,
+				kind: "stylesheet"
+			}));
+			return assignManifestLink(link, {
+				href: result.href,
+				crossOrigin: result.crossOrigin
+			});
+		}));
+		if (route.scripts?.length) for (const script of route.scripts) {
+			const src = script.attrs?.src;
+			if (typeof src !== "string") continue;
+			const result = await transformScript(src);
+			script.attrs = {
+				...script.attrs,
+				src: result.href
+			};
+			if (result.crossOrigin) script.attrs.crossOrigin = result.crossOrigin;
+			else delete script.attrs.crossOrigin;
+		}
+	}
+	return manifest;
+}
+/**
+* Builds a final ServerManifest without URL transforms. Used when no
+* transformAssets option is provided.
+*
+* Returns a new manifest object so the cached base manifest is never mutated.
+*/
+function buildManifest(source, opts) {
+	return {
+		...source.scriptFormat ? { scriptFormat: source.scriptFormat } : {},
+		...opts?.inlineCss !== false && source.inlineCss ? { inlineCss: structuredClone(source.inlineCss) } : {},
+		routes: { ...source.routes }
+	};
+}
+function getStaticHandlerInlineCssDefault(handlerInlineCss) {
+	if (typeof handlerInlineCss === "function") return;
+	return handlerInlineCss ?? true;
+}
+async function resolveInlineCssForRequest(opts) {
+	if (opts.requestInlineCss !== void 0) return opts.requestInlineCss;
+	if (typeof opts.handlerInlineCss === "function") return await opts.handlerInlineCss({ request: opts.request });
+	return opts.handlerInlineCss ?? true;
+}
+function createCachedBaseManifestLoader(loadBaseManifest) {
+	let baseManifestPromise;
+	return () => {
+		if (!baseManifestPromise) baseManifestPromise = loadBaseManifest().catch((error) => {
+			baseManifestPromise = void 0;
+			throw error;
+		});
+		return baseManifestPromise;
+	};
+}
+function createFinalManifestTransformResolver(transformAssets, opts) {
+	const transformConfig = transformAssets !== void 0 ? resolveTransformAssetsConfig(transformAssets) : void 0;
+	const cache = transformConfig ? transformConfig.cache : true;
+	const warmup = !!transformAssets && typeof transformAssets === "object" && "warmup" in transformAssets && transformAssets.warmup === true;
+	let cachedCreateTransformPromise;
+	const clearCachedCreateTransform = () => {
+		cachedCreateTransformPromise = void 0;
+	};
+	return {
+		cache,
+		warmup,
+		clearCachedCreateTransform,
+		getTransformFn: async (ctx) => {
+			if (!transformConfig) return void 0;
+			if (transformConfig.type !== "createTransform") return transformConfig.transformFn;
+			if (!cache || !opts.cacheCreateTransform) return transformConfig.createTransform(ctx);
+			if (!cachedCreateTransformPromise) cachedCreateTransformPromise = Promise.resolve(transformConfig.createTransform(ctx)).catch((error) => {
+				clearCachedCreateTransform();
+				throw error;
+			});
+			return cachedCreateTransformPromise;
+		}
+	};
+}
+function createFinalManifestResolver(opts) {
+	const finalManifestCache = /* @__PURE__ */ new Map();
+	const transformResolver = createFinalManifestTransformResolver(opts.transformAssets, { cacheCreateTransform: opts.cacheCreateTransform });
+	const handlerDefaultInlineCss = getStaticHandlerInlineCssDefault(opts.inlineCss);
+	const getRequestManifestOptions = async (requestOpts) => {
+		const transformFn = await transformResolver.getTransformFn({
+			warmup: false,
+			request: requestOpts.request
+		});
+		const inlineCss = await resolveInlineCssForRequest({
+			request: requestOpts.request,
+			handlerInlineCss: opts.inlineCss,
+			requestInlineCss: requestOpts.requestInlineCss
+		});
+		return {
+			getBaseManifest: requestOpts.getBaseManifest,
+			transformFn,
+			cache: transformResolver.cache,
+			inlineCss
+		};
+	};
+	const resolveRequest = async (requestOpts, cache) => {
+		return resolveFinalManifest({
+			...await getRequestManifestOptions(requestOpts),
+			finalManifestCache: cache
+		});
+	};
+	return {
+		warmup: ({ getBaseManifest }) => warmupFinalManifest({
+			enabled: transformResolver.warmup,
+			handlerDefaultInlineCss,
+			cache: transformResolver.cache,
+			finalManifestCache,
+			getBaseManifest,
+			getTransformFn: () => transformResolver.getTransformFn({ warmup: true }),
+			onError: transformResolver.clearCachedCreateTransform
+		}),
+		resolveCached: (requestOpts) => resolveRequest(requestOpts, finalManifestCache),
+		resolveUncached: (requestOpts) => resolveRequest(requestOpts, void 0)
+	};
+}
+function getFinalManifestCacheKey(inlineCss) {
+	return inlineCss ? "inline-css" : "linked-css";
+}
+function cacheFinalManifestPromise(cachedFinalManifestPromises, cacheKey, promise) {
+	const cachedFinalManifestPromise = promise.catch((error) => {
+		if (cachedFinalManifestPromises.get(cacheKey) === cachedFinalManifestPromise) cachedFinalManifestPromises.delete(cacheKey);
+		throw error;
+	});
+	cachedFinalManifestPromises.set(cacheKey, cachedFinalManifestPromise);
+	return cachedFinalManifestPromise;
+}
+function getOrCreateCachedFinalManifestPromise(cachedFinalManifestPromises, cacheKey, computeFinalManifest) {
+	const cachedFinalManifestPromise = cachedFinalManifestPromises.get(cacheKey);
+	if (cachedFinalManifestPromise) return cachedFinalManifestPromise;
+	return cacheFinalManifestPromise(cachedFinalManifestPromises, cacheKey, Promise.resolve().then(computeFinalManifest));
+}
+async function buildFinalManifest(opts) {
+	return opts.transformFn ? await transformManifestAssets(opts.base, opts.transformFn, { inlineCss: opts.inlineCss }) : buildManifest(opts.base, { inlineCss: opts.inlineCss });
+}
+async function resolveFinalManifest(opts) {
+	const computeFinalManifest = async () => {
+		return buildFinalManifest({
+			base: await opts.getBaseManifest(),
+			transformFn: opts.transformFn,
+			inlineCss: opts.inlineCss
+		});
+	};
+	if (opts.finalManifestCache && (!opts.transformFn || opts.cache)) return getOrCreateCachedFinalManifestPromise(opts.finalManifestCache, getFinalManifestCacheKey(opts.inlineCss), computeFinalManifest);
+	return computeFinalManifest();
+}
+function warmupFinalManifest(opts) {
+	if (!opts.enabled || opts.handlerDefaultInlineCss === void 0 || !opts.cache) return;
+	const inlineCss = opts.handlerDefaultInlineCss;
+	const warmupPromise = getOrCreateCachedFinalManifestPromise(opts.finalManifestCache, getFinalManifestCacheKey(inlineCss), async () => {
+		const [base, transformFn] = await Promise.all([opts.getBaseManifest(), opts.getTransformFn()]);
+		return buildFinalManifest({
+			base,
+			transformFn,
+			inlineCss
+		});
+	});
+	if (opts.onError) warmupPromise.catch(opts.onError);
+	return warmupPromise;
+}
+var ServerFunctionSerializationAdapter = createSerializationAdapter({
+	key: "$TSS/serverfn",
+	test: (v) => {
+		if (typeof v !== "function") return false;
+		if (!(TSS_SERVER_FUNCTION in v)) return false;
+		return !!v[TSS_SERVER_FUNCTION];
+	},
+	toSerializable: ({ serverFnMeta }) => ({ functionId: serverFnMeta.id }),
+	fromSerializable: ({ functionId }) => {
+		const fn = async (opts, signal) => {
+			const serverFn = await getServerFnById(functionId, { origin: "client" });
+			const result = await serverFn({
+				data: opts?.data,
+				context: opts?.context,
+				method: serverFn.method ?? "GET"
+			}, signal);
+			if (result.error !== void 0) throw result.error;
+			return result.result;
+		};
+		return fn;
+	}
+});
+function getStartResponseHeaders(opts) {
+	return mergeHeaders({ "Content-Type": "text/html; charset=utf-8" }, ..._getRenderedMatches(opts.router.stores.matches.get()).map((match) => {
+		return match.headers;
+	}));
+}
+var entriesPromise;
+var defaultCsrfMiddleware = createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === "serverFn" });
+var getCachedBaseManifest = createCachedBaseManifestLoader(() => getStartManifest());
+var getProdBaseManifest = () => getCachedBaseManifest();
+var getBaseManifest = getProdBaseManifest;
+var createEarlyHintsForRequest = createEarlyHintsCollector;
+async function loadEntries() {
+	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
+		import("./router-BTFfev8g.mjs"),
+		import("./start-Dsdw4jtz.mjs"),
+		import("./empty-plugin-adapters-D9UWiqvJ.mjs")
+	]);
+	return {
+		routerEntry,
+		startEntry,
+		pluginAdapters
+	};
+}
+function getEntries() {
+	if (!entriesPromise) entriesPromise = loadEntries();
+	return entriesPromise;
+}
+var ROUTER_BASEPATH = "/";
+var SERVER_FN_BASE = "/_serverFn/";
+var IS_PRERENDERING = process.env.TSS_PRERENDERING === "true";
+var IS_SHELL_ENV = process.env.TSS_SHELL === "true";
+var IS_DEV = false;
+var ERR_NO_RESPONSE = IS_DEV ? `It looks like you forgot to return a response from your server route handler. If you want to defer to the app router, make sure to have a component set in this route.` : "Internal Server Error";
+var ERR_NO_DEFER = IS_DEV ? `You cannot defer to the app router if there is no component defined on this route.` : "Internal Server Error";
+function throwRouteHandlerError() {
+	throw new Error(ERR_NO_RESPONSE);
+}
+function throwIfMayNotDefer() {
+	throw new Error(ERR_NO_DEFER);
+}
+function getResponseFromResult(result) {
+	return isSsrResponse(result) || result instanceof Response ? result : result?.response;
+}
+var responseBodySources = /* @__PURE__ */ new WeakMap();
+function disposeResponseResult(result, reason) {
+	const response = getResponseFromResult(result);
+	if (isSsrResponse(response) || response instanceof Response) disposeSsrResponse(response, reason);
+}
+function hasResponseBody(value) {
+	return value instanceof Response && value.body !== null;
+}
+function inheritsResponseOwnership(ownership, candidate) {
+	return hasResponseBody(candidate) && (candidate.body === ownership.response.body || responseBodySources.get(candidate) === ownership.response);
+}
+function disposeResponseOwnership(ownership, reason) {
+	const { response, sourceBody, streamResponse } = ownership;
+	streamResponse?.dispose(reason);
+	if (!streamResponse || response.body !== sourceBody) response.body.cancel(reason).catch(() => {});
+}
+function getOwnedResponse(ownership) {
+	const { response, sourceBody, streamResponse } = ownership;
+	if (!streamResponse) return response;
+	if (streamResponse.response === response && response.body === sourceBody) return streamResponse;
+	if (response.body === sourceBody) return {
+		...streamResponse,
+		response
+	};
+	return {
+		...streamResponse,
+		response,
+		dispose(reason) {
+			disposeResponseOwnership(ownership, reason);
+		}
+	};
+}
+function createLateResponseDisposer(signal) {
+	return (result) => disposeResponseResult(result, signal.reason);
+}
+/**
+* Compose middleware around a terminal response handler. With no middleware
+* the terminal runs directly.
+*/
+async function executeMiddleware(middlewares, terminal, ctx, signal, terminalNext) {
+	let index = -1;
+	let responseOwnership;
+	let settled = false;
+	const disposeAbandonedResult = createLateResponseDisposer(signal);
+	const setResponse = (response) => {
+		const ssrResponse = isSsrResponse(response) ? response : void 0;
+		const streamResponse = ssrResponse?.serverSsrCleanup === "stream" ? ssrResponse : void 0;
+		const exposed = ssrResponse ? ssrResponse.response : response;
+		const current = responseOwnership;
+		if (settled) {
+			if (exposed !== ctx.response) disposeResponseResult(response, "late middleware response");
+			return;
+		}
+		if (current && current.response === exposed) current.streamResponse ??= streamResponse;
+		else if (current && inheritsResponseOwnership(current, exposed)) {
+			current.response = exposed;
+			current.streamResponse ??= streamResponse;
+		} else {
+			if (current) disposeResponseOwnership(current, "middleware response replaced");
+			if (hasResponseBody(exposed)) responseOwnership = {
+				response: exposed,
+				sourceBody: exposed.body,
+				streamResponse
+			};
+			else responseOwnership = void 0;
+		}
+		ctx.response = exposed;
+	};
+	const reconcileCtxResponse = () => {
+		if (ctx.response !== responseOwnership?.response) setResponse(ctx.response);
+	};
+	let nextPromise;
+	function next(nextCtx) {
+		const result = runNext(nextCtx);
+		nextPromise = result;
+		return result;
+	}
+	async function runNext(nextCtx) {
+		signal.throwIfAborted();
+		if (nextCtx) {
+			if (nextCtx.context) ctx.context = safeObjectMerge(ctx.context, nextCtx.context);
+			for (const key of Object.keys(nextCtx)) if (key === "response") setResponse(nextCtx.response);
+			else if (key !== "context") ctx[key] = nextCtx[key];
+		}
+		index++;
+		const isTerminal = index === middlewares.length;
+		const middleware = index < middlewares.length ? middlewares[index] : isTerminal ? terminal : void 0;
+		const middlewareNext = isTerminal && terminalNext ? terminalNext : next;
+		if (!middleware) return ctx;
+		let result;
+		try {
+			const pending = middleware({
+				...ctx,
+				next: middlewareNext
+			});
+			if (nextPromise && pending === nextPromise) {
+				nextPromise = void 0;
+				await pending;
+				if (signal.aborted) throw signal.reason;
+				return ctx;
+			} else if (!isPromise(pending)) {
+				result = pending;
+				signal.throwIfAborted();
+			} else result = await waitForReason(pending, signal, disposeAbandonedResult, disposeAbandonedResult);
+		} catch (err) {
+			reconcileCtxResponse();
+			if (signal.aborted) {
+				if (result !== void 0) disposeAbandonedResult(result);
+				if (err !== signal.reason) disposeAbandonedResult(err);
+				throw signal.reason;
+			}
+			if (err instanceof Response) {
+				setResponse(err);
+				return ctx;
+			}
+			throw err;
+		}
+		if (isTerminal && terminalNext && !result) throwRouteHandlerError();
+		reconcileCtxResponse();
+		if (result && result !== ctx) {
+			const response = getResponseFromResult(result);
+			if (response !== void 0 && response !== ctx.response) setResponse(response);
+			if (response !== result && result.context && result.context !== ctx.context) ctx.context = safeObjectMerge(ctx.context, result.context);
+		}
+		return ctx;
+	}
+	try {
+		await runNext();
+		const response = ctx.response;
+		if (!response) throwRouteHandlerError();
+		reconcileCtxResponse();
+		if (signal.aborted) throw signal.reason;
+		settled = true;
+		return responseOwnership ? getOwnedResponse(responseOwnership) : response;
+	} catch (err) {
+		settled = true;
+		if (responseOwnership) disposeResponseOwnership(responseOwnership, signal.aborted ? signal.reason : err);
+		throw err;
+	}
+}
+/**
+* Creates the TanStack Start request handler.
+*
+* @example Backwards-compatible usage (handler callback only):
+* ```ts
+* export default createStartHandler(defaultStreamHandler)
+* ```
+*
+* @example With CDN URL rewriting:
+* ```ts
+* export default createStartHandler({
+*   handler: defaultStreamHandler,
+*   transformAssets: 'https://cdn.example.com',
+* })
+* ```
+*
+* @example With per-request URL rewriting:
+* ```ts
+* export default createStartHandler({
+*   handler: defaultStreamHandler,
+*   transformAssets: {
+*     transform: ({ url }) => {
+*       const cdnBase = getRequest().headers.get('x-cdn-base') || ''
+*       return { href: `${cdnBase}${url}` }
+*     },
+*     cache: false,
+*   },
+* })
+* ```
+*/
+function createStartHandler(cbOrOptions) {
+	const handlerOptions = typeof cbOrOptions === "function" ? {} : cbOrOptions;
+	const cb = typeof cbOrOptions === "function" ? cbOrOptions : cbOrOptions.handler;
+	const finalManifestResolver = createFinalManifestResolver({
+		...handlerOptions,
+		cacheCreateTransform: true
+	});
+	const resolveManifestForRequest = finalManifestResolver.resolveCached;
+	finalManifestResolver.warmup({ getBaseManifest: () => getBaseManifest(void 0) });
+	const startRequestResolver = async (request, requestOpts) => {
+		const signal = request.signal;
+		let router;
+		let routerPromise;
+		let responseOwnsCleanup = false;
+		try {
+			signal.throwIfAborted();
+			const { url, handledProtocolRelativeURL } = getNormalizedURL(request.url);
+			const href = url.pathname + url.search + url.hash;
+			const origin = url.origin;
+			if (handledProtocolRelativeURL) return Response.redirect(url, 308);
+			const entries = await waitForReason(getEntries(), signal);
+			const isServerFnRequest = !!SERVER_FN_BASE && url.pathname.startsWith(SERVER_FN_BASE);
+			const startInstance = entries.startEntry.startInstance;
+			let startOptions;
+			if (startInstance) {
+				const pendingStartOptions = startInstance.getOptions();
+				startOptions = isPromise(pendingStartOptions) ? await waitForReason(pendingStartOptions, signal) : pendingStartOptions;
+				signal.throwIfAborted();
+			} else startOptions = {};
+			const { hasPluginAdapters, pluginSerializationAdapters } = entries.pluginAdapters;
+			const serializationAdapters = [
+				...startOptions.serializationAdapters || [],
+				...hasPluginAdapters ? pluginSerializationAdapters : [],
+				ServerFunctionSerializationAdapter
+			];
+			const requestStartOptions = {
+				...startOptions,
+				requestMiddleware: startInstance ? startOptions.requestMiddleware : isServerFnRequest ? [defaultCsrfMiddleware] : void 0,
+				serializationAdapters
+			};
+			const flattenedRequestMiddlewares = requestStartOptions.requestMiddleware ? flattenMiddlewares(requestStartOptions.requestMiddleware) : [];
+			const executedRequestMiddlewares = new Set(flattenedRequestMiddlewares);
+			const getRouter = () => {
+				routerPromise ??= (async () => {
+					signal.throwIfAborted();
+					const requestRouter = await waitForReason(entries.routerEntry.getRouter(), signal);
+					let isShell = IS_SHELL_ENV;
+					if (IS_PRERENDERING && !isShell) isShell = request.headers.get(HEADERS.TSS_SHELL) === "true";
+					const history = createServerHistory(href);
+					requestRouter.update({
+						history,
+						isShell,
+						isPrerendering: IS_PRERENDERING,
+						origin: requestRouter.options.origin ?? origin,
+						defaultSsr: requestStartOptions.defaultSsr,
+						serializationAdapters: [...requestStartOptions.serializationAdapters, ...requestRouter.options.serializationAdapters || []],
+						basepath: ROUTER_BASEPATH
+					});
+					router = requestRouter;
+					return requestRouter;
+				})();
+				return routerPromise;
+			};
+			const handlerType = isServerFnRequest ? "serverFn" : "router";
+			const startContext = {
+				getRouter,
+				startOptions: requestStartOptions,
+				request,
+				executedRequestMiddlewares,
+				handlerType
+			};
+			let terminal;
+			if (isServerFnRequest) {
+				const serverFnId = url.pathname.slice(SERVER_FN_BASE.length).split("/")[0];
+				if (!serverFnId) throw new Error("Invalid server action param for serverFnId");
+				terminal = ({ context }) => runWithStartContext({
+					...startContext,
+					contextAfterGlobalMiddlewares: context
+				}, () => handleServerAction({
+					request,
+					context: requestOpts?.context,
+					serverFnId
+				}));
+			} else {
+				const executeRouter = async (serverContext, matchedRoutes) => {
+					if (!/(^|,)\s*(\*\/\*|text\/html)/.test(request.headers.get("Accept") || "*/*")) return normalizeSsrResponse(Response.json({ error: "Only HTML requests are supported here" }, { status: 406 }));
+					const manifest = await waitForReason(resolveManifestForRequest({
+						request,
+						requestInlineCss: requestOpts?.inlineCss,
+						getBaseManifest: () => getBaseManifest(matchedRoutes)
+					}), signal);
+					const earlyHints = createEarlyHintsForRequest({
+						onEarlyHints: requestOpts?.onEarlyHints,
+						responseLinkHeader: requestOpts?.responseLinkHeader
+					});
+					earlyHints?.collectStatic({
+						manifest,
+						matchedRoutes
+					});
+					const routerInstance = await getRouter();
+					attachRouterServerSsrUtils({
+						router: routerInstance,
+						manifest,
+						getRequestAssets: () => getStartContext({ throwIfNotFound: false })?.requestAssets
+					});
+					routerInstance.options.additionalContext = { serverContext };
+					await routerInstance.load({ _signal: signal });
+					signal.throwIfAborted();
+					if (routerInstance._serverResult?.type === "redirect") return normalizeSsrResponse(routerInstance._serverResult.redirect);
+					earlyHints?.collectDynamic(_getRenderedMatches(routerInstance.stores.matches.get()));
+					const ctx = getStartContext({ throwIfNotFound: false });
+					await routerInstance.serverSsr.dehydrate({
+						requestAssets: ctx?.requestAssets,
+						signal
+					});
+					signal.throwIfAborted();
+					const responseHeaders = getStartResponseHeaders({ router: routerInstance });
+					earlyHints?.appendResponseHeaders(responseHeaders);
+					signal.throwIfAborted();
+					const disposeLate = createLateResponseDisposer(signal);
+					return normalizeSsrResponse(await waitForReason(cb({
+						request,
+						router: routerInstance,
+						responseHeaders
+					}), signal, disposeLate, disposeLate));
+				};
+				terminal = ({ context }) => runWithStartContext({
+					...startContext,
+					contextAfterGlobalMiddlewares: context
+				}, () => handleServerRoutes({
+					getRouter,
+					request,
+					url,
+					executeRouter,
+					context,
+					executedRequestMiddlewares
+				}));
+			}
+			const middlewareResponse = await executeMiddleware(flattenedRequestMiddlewares.map((d) => d.options.server), terminal, {
+				request,
+				pathname: url.pathname,
+				handlerType,
+				context: createNullProtoObject(requestOpts?.context)
+			}, signal);
+			let result;
+			try {
+				result = await handleRedirectResponse(middlewareResponse, getRouter, signal, isServerFnRequest && request.headers.get("x-tsr-serverFn") === "true");
+				if (request.method === "HEAD") result = stripSsrResponseBody(result, "HEAD body stripped");
+			} catch (error) {
+				disposeResponseResult(middlewareResponse, signal.aborted ? signal.reason : error);
+				throw error;
+			}
+			bindSsrResponseToRequest(router, result, signal);
+			signal.throwIfAborted();
+			responseOwnsCleanup = result.serverSsrCleanup === "stream";
+			return result.response;
+		} finally {
+			if (router?.serverSsr && !responseOwnsCleanup) router.serverSsr.cleanup();
+		}
+	};
+	return requestHandler(startRequestResolver);
+}
+var relativeRedirectProtocols = /* @__PURE__ */ new Set();
+async function handleRedirectResponse(response, getRouter, signal, serializeRedirect) {
+	signal.throwIfAborted();
+	const ssrResponse = normalizeSsrResponse(response);
+	const redirect = ssrResponse.response;
+	if (!isRedirect(redirect)) return ssrResponse;
+	const opts = redirect.options;
+	const href = redirect.headers.get("Location") || opts.href;
+	if (!href && opts.to && typeof opts.to === "string" && !opts.to.startsWith("/")) throw new Error(`Server side redirects must use absolute paths via the 'href' or 'to' options. The redirect() method's "to" property accepts an internal path only. Use the "href" property to provide an external URL. Received: ${JSON.stringify(opts)}`);
+	if (!href && [
+		"params",
+		"search",
+		"hash"
+	].some((d) => typeof opts[d] === "function")) throw new Error(`Server side redirects must use static search, params, and hash values and do not support functional values. Received functional values for: ${Object.keys(opts).filter((d) => typeof opts[d] === "function").map((d) => `"${d}"`).join(", ")}`);
+	signal.throwIfAborted();
+	if (href && !isDangerousProtocol(href, relativeRedirectProtocols)) {
+		opts.href = href;
+		redirect.headers.set("Location", href);
+	} else {
+		const router = await getRouter();
+		signal.throwIfAborted();
+		router.resolveRedirect(redirect);
+	}
+	if (serializeRedirect) {
+		const redirectOptions = { ...opts };
+		delete redirectOptions.headers;
+		const responseHeaders = new Headers(redirect.headers);
+		responseHeaders.set("content-type", "application/json");
+		return replaceSsrResponse(ssrResponse, Response.json({
+			...redirectOptions,
+			isSerializedRedirect: true
+		}, { headers: responseHeaders }), "redirect response replaced");
+	}
+	return ssrResponse;
+}
+function withParsedParams(handler, matchedRoutes) {
+	if (!matchedRoutes.some((route) => route.options.params?.parse ?? route.options.parseParams)) return handler;
+	return (ctx) => {
+		const params = Object.assign(Object.create(null), ctx.params);
+		for (const route of matchedRoutes) {
+			const parse = route.options.params?.parse ?? route.options.parseParams;
+			if (parse) Object.assign(params, parse(params));
+		}
+		return handler({
+			...ctx,
+			params
+		});
+	};
+}
+async function handleServerRoutes({ getRouter, request, url, executeRouter, context, executedRequestMiddlewares }) {
+	const router = await getRouter();
+	const pathname = executeRewriteInput(router.rewrite, url).pathname;
+	const [matchedRoutes, rawParams, foundRoute] = router.getMatchedRoutes(pathname);
+	const isExactMatch = foundRoute && rawParams["**"] === void 0;
+	const routeMiddlewares = [];
+	let terminalHandler = (ctx) => executeRouter(ctx.context, matchedRoutes);
+	let terminalNext;
+	for (const route of matchedRoutes) {
+		const serverMiddleware = route.options.server?.middleware;
+		if (serverMiddleware) {
+			const flattened = flattenMiddlewares(serverMiddleware);
+			for (const m of flattened) if (!executedRequestMiddlewares.has(m)) routeMiddlewares.push(m.options.server);
+		}
+	}
+	const server = foundRoute?.options.server;
+	if (server?.handlers && isExactMatch) {
+		const handlers = typeof server.handlers === "function" ? server.handlers({ createHandlers: (d) => d }) : server.handlers;
+		const requestMethod = request.method.toUpperCase();
+		const handler = requestMethod === "HEAD" ? handlers["HEAD"] ?? handlers["GET"] ?? handlers["ANY"] : handlers[requestMethod] ?? handlers["ANY"];
+		if (handler) {
+			const mayDefer = !!foundRoute.options.component;
+			if (typeof handler !== "function") {
+				if (handler.middleware?.length) {
+					const handlerMiddlewares = flattenMiddlewares(handler.middleware);
+					for (const m of handlerMiddlewares) routeMiddlewares.push(m.options.server);
+				}
+			}
+			const routeHandler = typeof handler === "function" ? handler : handler.handler;
+			if (routeHandler) {
+				const parsedHandler = withParsedParams(routeHandler, matchedRoutes);
+				if (!mayDefer) {
+					terminalHandler = parsedHandler;
+					terminalNext = throwIfMayNotDefer;
+				} else routeMiddlewares.push(parsedHandler);
+			}
+		}
+	}
+	return normalizeSsrResponse(await executeMiddleware(routeMiddlewares, terminalHandler, {
+		request,
+		context,
+		params: rawParams,
+		pathname,
+		handlerType: "router"
+	}, request.signal, terminalNext));
+}
+var fetch$1 = createStartHandler(defaultStreamHandler);
+function createServerEntry(entry) {
+	return { async fetch(...args) {
+		return await entry.fetch(...args);
+	} };
+}
+var server_default = createServerEntry({ fetch: fetch$1 });
 //#endregion
-export { getScriptPreloadAttrs as A, invariant as B, crossSerializeStream as C, toCrossJSONStream as D, toCrossJSONAsync as E, isDangerousProtocol as F, rootRouteId as G, dehydrateSsrMatchId as H, isPromise as I, isNotFound as K, waitForReason as L, resolveManifestAssetLink as M, resolveManifestCssLink as N, createInlineCssPlaceholderAsset as O, decodePath as P, _getRenderedMatches as R, createStream as S, isStream as T, isRedirect as U, createSieveCache as V, parseRedirect as W, createFileRoute as _, isSsrResponse as a, useRouter as b, stripSsrResponseBody as c, Scripts as d, HeadContent as f, lazyRouteComponent as g, Outlet as h, disposeSsrResponse as i, getStylesheetHref as j, createInlineCssStyleAsset as k, createHydrationScripts as l, createRouter as m, bindSsrResponseToRequest as n, normalizeSsrResponse as o, RouterProvider as p, defineHandlerCallback as r, replaceSsrResponse as s, renderRouterToStream as t, GLOBAL_TSR as u, createRootRouteWithContext as v, fromJSON as w, createPlugin as x, Link as y, executeRewriteInput as z };
+export { createServerEntry, server_default as default };
